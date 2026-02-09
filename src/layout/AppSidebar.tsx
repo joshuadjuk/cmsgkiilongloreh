@@ -31,6 +31,13 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   },
+  // --- TAMBAHAN MENU DATA JEMAAT DI SINI ---
+  {
+    icon: <UserCircleIcon />, // Menggunakan icon user yang ada
+    name: "Data Jemaat",
+    path: "/data-jemaat",
+  },
+  // -----------------------------------------
   {
     icon: <CalenderIcon />,
     name: "Calendar",
