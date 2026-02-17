@@ -20,6 +20,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import DataJemaat from './pages/Jemaat/DataJemaat';
 import EditJemaat from './pages/Jemaat/EditJemaat';
+import TambahJemaat from "./pages/Jemaat/TambahJemaat";
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
             <Route path="/data-jemaat" element={<DataJemaat />} />
+            <Route path="/data-jemaat/tambah" element={<TambahJemaat />} />
 
             {/* Route Edit dengan Parameter ID (:id) */}
             <Route path="/data-jemaat/edit/:id" element={<EditJemaat />} />
