@@ -38,7 +38,7 @@ const DataKeluarga: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState<FamilyGroup | null>(null);
 
-  const API_URL = 'http://localhost:8000/jemaat.php';
+  const API_URL = 'https://gereja.eternity.my.id/api-gkii/jemaat.php';
 
   useEffect(() => {
     fetchFamilies();

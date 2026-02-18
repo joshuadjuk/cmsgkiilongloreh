@@ -29,7 +29,7 @@ const EditJemaat: React.FC = () => {
   useEffect(() => {
     const fetchOldData = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/jemaat.php?id=${id}`);
+        const response = await fetch(`https://gereja.eternity.my.id/api-gkii/jemaat.php?id=${id}`);
         const json = await response.json();
         
         if (json.status === 'success' && json.data) {
@@ -72,7 +72,7 @@ const EditJemaat: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/jemaat.php', {
+      const response = await fetch('https://gereja.eternity.my.id/api-gkii/jemaat.php', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

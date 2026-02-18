@@ -47,7 +47,7 @@ const DataSeksi: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
-  const API_URL = 'http://localhost:8000/jemaat.php';
+  const API_URL = 'https://gereja.eternity.my.id/api-gkii/jemaat.php';
 
   // Fetch ulang setiap kali URL seksi berubah
   useEffect(() => {
@@ -157,7 +157,7 @@ const DataSeksi: React.FC = () => {
                 {searchTerm ? 'Data tidak ditemukan.' : `Belum ada data jemaat di unsur ${exactSeksiName}.`}
               </div>
             ) : (
-              currentData.map((member, key) => (
+              currentData.map((member) => (
                 <div className={`grid grid-cols-3 sm:grid-cols-6 items-center border border-t-0 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition`} key={member.id}>
                   
                   <div className="flex flex-col gap-1 p-2.5 xl:p-5">

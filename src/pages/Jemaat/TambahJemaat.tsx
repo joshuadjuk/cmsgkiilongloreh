@@ -30,7 +30,7 @@ const TambahJemaat: React.FC = () => {
   useEffect(() => {
     const fetchExistingKK = async () => {
       try {
-        const response = await fetch('http://localhost:8000/jemaat.php');
+        const response = await fetch('https://gereja.eternity.my.id/api-gkii/jemaat.php');
         const result = await response.json();
         
         if (result.status === 'success') {
@@ -62,7 +62,7 @@ const TambahJemaat: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/jemaat.php', {
+      const response = await fetch('https://gereja.eternity.my.id/api-gkii/jemaat.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -330,7 +330,7 @@ const TambahJemaat: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full justify-center rounded bg-primary p-3 font-medium text-white hover:bg-opacity-90"
+            className="flex w-full justify-center rounded bg-primary p-3 font-medium text-black hover:bg-opacity-90"
           >
             {loading ? 'Menyimpan...' : 'Simpan Data Jemaat'}
           </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import ReactApexChart from "react-apexcharts";
 
@@ -60,7 +60,7 @@ export default function Home() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch("http://localhost:8000/jemaat.php");
+      const response = await fetch("https://gereja.eternity.my.id/api-gkii/jemaat.php");
       const result = await response.json();
 
       if (result.status === "success") {

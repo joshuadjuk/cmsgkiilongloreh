@@ -33,7 +33,7 @@ const DataJemaat: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10; // Jumlah data per halaman
 
-  const API_URL = 'http://localhost:8000/jemaat.php';
+  const API_URL = 'https://gereja.eternity.my.id/api-gkii/jemaat.php';
 
   useEffect(() => {
     fetchMembers();
@@ -162,7 +162,7 @@ const DataJemaat: React.FC = () => {
                 {searchTerm ? 'Data tidak ditemukan.' : 'Belum ada data jemaat.'}
               </div>
             ) : (
-              currentData.map((member, key) => (
+              currentData.map((member) => (
                 <div className={`grid grid-cols-3 sm:grid-cols-6 border border-t-0 border-gray-200 dark:border-gray-700`} key={member.id}>
                   
                   <div className="flex flex-col gap-1 p-2.5 xl:p-5">
