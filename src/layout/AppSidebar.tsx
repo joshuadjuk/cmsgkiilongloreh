@@ -9,7 +9,6 @@ import {
   GridIcon,
   GroupIcon,
   HorizontaLDots,
-  PieChartIcon,
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -28,7 +27,6 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "Dashboard Jemaat", path: "/", pro: false },
-      { name: "Dashboard Keuangan", path: "/keuangan", pro: false },
     ],
   },
   // --- TAMBAHAN MENU DATA JEMAAT DI SINI ---
@@ -46,30 +44,35 @@ const navItems: NavItem[] = [
   {
     icon: <GroupIcon />,
     name: "Data Keluarga Jemaat",
-    path: "/profile",
+    path: "/data-keluarga",
   },
 ];
 
 const othersItems: NavItem[] = [
-    {
+  {
     icon: <BoxCubeIcon />,
     name: "Per Kelompok Doa",
     subItems: [
-      { name: "Kel 1", path: "/alerts", pro: false },
-      { name: "Kel 2", path: "/avatars", pro: false },
-      { name: "Kel 3", path: "/badge", pro: false },
-      { name: "Kel 4", path: "/buttons", pro: false },
+      { name: "Kalvari", path: "/kelompok-doa/kalvari", pro: false },
+      { name: "Efesus", path: "/kelompok-doa/efesus", pro: false },
+      { name: "Filipi", path: "/kelompok-doa/filipi", pro: false },
+      { name: "Imanuel", path: "/kelompok-doa/imanuel", pro: false },
+      { name: "Galatia", path: "/kelompok-doa/galatia", pro: false },
     ],
   },
   {
-    icon: <PieChartIcon />,
-    name: "Charts",
+    icon: <GroupIcon />, // Ganti dengan icon yang kamu punya
+    name: "Per Seksi / Unsur",
     subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
+      { name: "Perkaria", path: "/seksi/perkaria", pro: false },
+      { name: "Perkauan", path: "/seksi/perkauan", pro: false },
+      { name: "Anak & Tunas Remaja", path: "/seksi/anak-tunas-remaja", pro: false },
+      { name: "Remaja & Pemuda", path: "/seksi/remaja-pemuda", pro: false },
+      { name: "Lansia", path: "/seksi/lansia", pro: false },
     ],
   },
 ];
+
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();

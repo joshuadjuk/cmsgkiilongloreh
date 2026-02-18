@@ -1,16 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
 import Calendar from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
@@ -21,6 +10,9 @@ import Home from "./pages/Dashboard/Home";
 import DataJemaat from './pages/Jemaat/DataJemaat';
 import EditJemaat from './pages/Jemaat/EditJemaat';
 import TambahJemaat from "./pages/Jemaat/TambahJemaat";
+import DataKeluarga from './pages/Jemaat/DataKeluarga';
+import DataKelompokDoa from './pages/Jemaat/DataKelompokDoa';
+import DataSeksi from './pages/Jemaat/DataSeksi';
 
 export default function App() {
   return (
@@ -33,7 +25,6 @@ export default function App() {
             <Route index path="/" element={<Home />} />
 
             {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
             <Route path="/data-jemaat" element={<DataJemaat />} />
@@ -41,6 +32,12 @@ export default function App() {
 
             {/* Route Edit dengan Parameter ID (:id) */}
             <Route path="/data-jemaat/edit/:id" element={<EditJemaat />} />
+            {/* Halaman Tabel Data Keluarga */}
+            <Route path="/data-keluarga" element={<DataKeluarga />} />
+            {/* Halaman Tabel Per Kelompok Doa (Dinamis menggunakan :kelompok) */}
+            <Route path="/kelompok-doa/:kelompok" element={<DataKelompokDoa />} />
+            
+            <Route path="/seksi/:seksiParam" element={<DataSeksi />} />
 
 
             {/* Forms */}
@@ -49,22 +46,7 @@ export default function App() {
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
-
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
           </Route>
-
-          {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

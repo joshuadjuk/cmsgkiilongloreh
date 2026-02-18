@@ -1,283 +1,280 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { EventInput, DateSelectArg, EventClickArg } from "@fullcalendar/core";
+import { EventInput, EventClickArg } from "@fullcalendar/core";
 import { Modal } from "../components/ui/modal";
 import { useModal } from "../hooks/useModal";
 import PageMeta from "../components/common/PageMeta";
 
+// Interface untuk data mentah dari API
+interface Jemaat {
+  id: number;
+  nama_lengkap: string;
+  tanggal_lahir: string | null;
+  status_pernikahan: string;
+  tanggal_perkawinan: string | null;
+  hubungan_keluarga: string;
+  no_kk: string;
+}
+
+// Interface khusus untuk Event Kalender kita
 interface CalendarEvent extends EventInput {
   extendedProps: {
-    calendar: string;
+    type: "Ulang Tahun" | "Pernikahan";
+    originalDate: string; // Tanggal lahir/nikah asli (Tahun jadul)
+    ageOrAnniversary: number; // Ulang tahun ke-berapa
+    memberData: Jemaat; // Simpan data utuh jemaatnya
+    partnerName?: string; // Khusus untuk pernikahan (Nama Suami/Istri)
   };
 }
 
 const Calendar: React.FC = () => {
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null
-  );
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  const [eventEndDate, setEventEndDate] = useState("");
-  const [eventLevel, setEventLevel] = useState("");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
-  const calendarsEvents = {
-    Danger: "danger",
-    Success: "success",
-    Primary: "primary",
-    Warning: "warning",
-  };
+  const API_URL = "http://localhost:8000/jemaat.php";
 
+  // Ambil Data saat halaman dimuat
   useEffect(() => {
-    // Initialize with some events
-    setEvents([
-      {
-        id: "1",
-        title: "Event Conf.",
-        start: new Date().toISOString().split("T")[0],
-        extendedProps: { calendar: "Danger" },
-      },
-      {
-        id: "2",
-        title: "Meeting",
-        start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Success" },
-      },
-      {
-        id: "3",
-        title: "Workshop",
-        start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-        end: new Date(Date.now() + 259200000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Primary" },
-      },
-    ]);
+    fetchEvents();
   }, []);
 
-  const handleDateSelect = (selectInfo: DateSelectArg) => {
-    resetModalFields();
-    setEventStartDate(selectInfo.startStr);
-    setEventEndDate(selectInfo.endStr || selectInfo.startStr);
-    openModal();
-  };
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const result = await response.json();
 
-  const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = clickInfo.event;
-    setSelectedEvent(event as unknown as CalendarEvent);
-    setEventTitle(event.title);
-    setEventStartDate(event.start?.toISOString().split("T")[0] || "");
-    setEventEndDate(event.end?.toISOString().split("T")[0] || "");
-    setEventLevel(event.extendedProps.calendar);
-    openModal();
-  };
+      if (result.status === "success") {
+        const rawData: Jemaat[] = result.data;
+        const currentYear = new Date().getFullYear();
+        const calendarEvents: CalendarEvent[] = [];
 
-  const handleAddOrUpdateEvent = () => {
-    if (selectedEvent) {
-      // Update existing event
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === selectedEvent.id
-            ? {
-                ...event,
-                title: eventTitle,
-                start: eventStartDate,
-                end: eventEndDate,
-                extendedProps: { calendar: eventLevel },
-              }
-            : event
-        )
-      );
-    } else {
-      // Add new event
-      const newEvent: CalendarEvent = {
-        id: Date.now().toString(),
-        title: eventTitle,
-        start: eventStartDate,
-        end: eventEndDate,
-        allDay: true,
-        extendedProps: { calendar: eventLevel },
-      };
-      setEvents((prevEvents) => [...prevEvents, newEvent]);
+        rawData.forEach((member) => {
+          // --- 1. PROSES DATA ULANG TAHUN ---
+          if (member.tanggal_lahir && member.tanggal_lahir !== "0000-00-00") {
+            const birthDate = new Date(member.tanggal_lahir);
+            const birthYear = birthDate.getFullYear();
+            const age = currentYear - birthYear;
+
+            // Buat tanggal ulang tahun di tahun INI
+            const currentYearBday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+            // Perbaiki timezone issue
+            const formattedDate = currentYearBday.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+
+            calendarEvents.push({
+              id: `ultah-${member.id}`,
+              title: `🎂 Ultah: ${member.nama_lengkap}`,
+              start: formattedDate,
+              allDay: true,
+              backgroundColor: "#EBF5FF", // Biru Muda (Tailwind blue-100)
+              borderColor: "#3B82F6", // Biru Tua (Tailwind blue-500)
+              textColor: "#1D4ED8",
+              extendedProps: {
+                type: "Ulang Tahun",
+                originalDate: member.tanggal_lahir,
+                ageOrAnniversary: age,
+                memberData: member,
+              },
+            });
+          }
+
+          // --- 2. PROSES DATA PERNIKAHAN ---
+          // Hanya ambil data dari "Kepala Keluarga" agar event pernikahan tidak double 
+          // (karena Istri juga punya tanggal perkawinan yang sama di database)
+          if (
+            member.hubungan_keluarga === "Kepala Keluarga" &&
+            member.status_pernikahan === "Sudah Menikah" &&
+            member.tanggal_perkawinan &&
+            member.tanggal_perkawinan !== "0000-00-00"
+          ) {
+            const marriageDate = new Date(member.tanggal_perkawinan);
+            const marriageYear = marriageDate.getFullYear();
+            const anniversary = currentYear - marriageYear;
+
+            // Buat tanggal anniversary di tahun INI
+            const currentYearAnniv = new Date(currentYear, marriageDate.getMonth(), marriageDate.getDate());
+            const formattedAnnivDate = currentYearAnniv.toLocaleDateString('en-CA');
+
+            // Cari nama istrinya berdasarkan no_kk yang sama
+            const wife = rawData.find(
+              (w) => w.no_kk === member.no_kk && w.hubungan_keluarga === "Istri"
+            );
+            const partnerName = wife ? wife.nama_lengkap : "Istri";
+
+            calendarEvents.push({
+              id: `nikah-${member.id}`,
+              title: `💍 Nikah: Kel. ${member.nama_lengkap}`,
+              start: formattedAnnivDate,
+              allDay: true,
+              backgroundColor: "#DCFCE7", // Hijau Muda (Tailwind green-100)
+              borderColor: "#22C55E", // Hijau Tua (Tailwind green-500)
+              textColor: "#15803D",
+              extendedProps: {
+                type: "Pernikahan",
+                originalDate: member.tanggal_perkawinan,
+                ageOrAnniversary: anniversary,
+                memberData: member,
+                partnerName: partnerName,
+              },
+            });
+          }
+        });
+
+        setEvents(calendarEvents);
+      }
+    } catch (error) {
+      console.error("Gagal memuat event:", error);
     }
-    closeModal();
-    resetModalFields();
   };
 
-  const resetModalFields = () => {
-    setEventTitle("");
-    setEventStartDate("");
-    setEventEndDate("");
-    setEventLevel("");
-    setSelectedEvent(null);
+  // Saat Event di Kalender di klik
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    // Cast type event yang diklik ke CalendarEvent kita
+    const clickedEvent = {
+      title: clickInfo.event.title,
+      extendedProps: clickInfo.event.extendedProps as CalendarEvent["extendedProps"],
+    } as CalendarEvent;
+
+    setSelectedEvent(clickedEvent);
+    openModal();
   };
 
   return (
     <>
       <PageMeta
-        title="React.js Calendar Dashboard | TailAdmin - Next.js Admin Dashboard Template"
-        description="This is React.js Calendar Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+        title="Kalender Jemaat | CMS GKII"
+        description="Kalender Ulang Tahun dan Hari Jadi Pernikahan Jemaat"
       />
-      <div className="rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-boxdark shadow-sm">
+        
+        {/* Keterangan Warna (Legend) */}
+        <div className="mb-4 flex gap-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded border border-blue-500 bg-blue-100 block"></span>
+            Ulang Tahun
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded border border-green-500 bg-green-100 block"></span>
+            Hari Jadi Pernikahan
+          </div>
+        </div>
+
+        {/* Komponen Kalender */}
         <div className="custom-calendar">
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             headerToolbar={{
-              left: "prev,next addEventButton",
+              left: "prev,next today",
               center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
+              right: "dayGridMonth,timeGridWeek",
             }}
             events={events}
-            selectable={true}
-            select={handleDateSelect}
             eventClick={handleEventClick}
-            eventContent={renderEventContent}
-            customButtons={{
-              addEventButton: {
-                text: "Add Event +",
-                click: openModal,
-              },
-            }}
+            eventDisplay="block" // Supaya border color kelihatan utuh
+            height={"auto"} // Agar menyesuaikan layar
+            // Mencegah select & drag n drop karena ini view only
+            editable={false} 
+            selectable={false}
           />
         </div>
-        <Modal
-          isOpen={isOpen}
-          onClose={closeModal}
-          className="max-w-[700px] p-6 lg:p-10"
-        >
-          <div className="flex flex-col px-2 overflow-y-auto custom-scrollbar">
-            <div>
-              <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
-                {selectedEvent ? "Edit Event" : "Add Event"}
-              </h5>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Plan your next big moment: schedule or edit an event to stay on
-                track
-              </p>
-            </div>
-            <div className="mt-8">
-              <div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Event Title
-                  </label>
-                  <input
-                    id="event-title"
-                    type="text"
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
+
+        {/* Modal Pop Up Info Event */}
+        <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[450px] p-6 lg:p-8">
+          {selectedEvent && (
+            <div className="flex flex-col text-center">
+              
+              {/* Ikon Besar Berdasarkan Tipe */}
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-4 shadow-sm
+                {selectedEvent.extendedProps.type === 'Ulang Tahun' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                {selectedEvent.extendedProps.type === "Ulang Tahun" ? (
+                  <span className="text-3xl">🎂</span>
+                ) : (
+                  <span className="text-3xl">💍</span>
+                )}
               </div>
-              <div className="mt-6">
-                <label className="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Event Color
-                </label>
-                <div className="flex flex-wrap items-center gap-4 sm:gap-5">
-                  {Object.entries(calendarsEvents).map(([key, value]) => (
-                    <div key={key} className="n-chk">
-                      <div
-                        className={`form-check form-check-${value} form-check-inline`}
-                      >
-                        <label
-                          className="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
-                          htmlFor={`modal${key}`}
-                        >
-                          <span className="relative">
-                            <input
-                              className="sr-only form-check-input"
-                              type="radio"
-                              name="event-level"
-                              value={key}
-                              id={`modal${key}`}
-                              checked={eventLevel === key}
-                              onChange={() => setEventLevel(key)}
-                            />
-                            <span className="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700">
-                              <span
-                                className={`h-2 w-2 rounded-full bg-white ${
-                                  eventLevel === key ? "block" : "hidden"
-                                }`}
-                              ></span>
-                            </span>
-                          </span>
-                          {key}
-                        </label>
+
+              {/* Judul Modal */}
+              <h3 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+                {selectedEvent.extendedProps.type === "Ulang Tahun" 
+                  ? "Selamat Ulang Tahun!" 
+                  : "Happy Anniversary!"}
+              </h3>
+
+              {/* Konten Spesifik */}
+              <div className="mt-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-800 text-left border border-gray-100 dark:border-gray-700">
+                {selectedEvent.extendedProps.type === "Ulang Tahun" ? (
+                  <>
+                    <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Nama Jemaat</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {selectedEvent.extendedProps.memberData.nama_lengkap}
+                    </p>
+                    
+                    <div className="mt-4 h-px w-full bg-gray-200 dark:bg-gray-700"></div>
+                    
+                    <div className="mt-4 flex justify-between">
+                      <div>
+                        <p className="text-sm text-gray-500">Tanggal Lahir</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedEvent.extendedProps.originalDate}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">Usia Tahun Ini</p>
+                        <p className="font-bold text-blue-600 text-lg">
+                          {selectedEvent.extendedProps.ageOrAnniversary} Tahun
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Keluarga</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      Bpk. {selectedEvent.extendedProps.memberData.nama_lengkap}
+                    </p>
+                    <p className="text-md font-semibold text-gray-700 dark:text-gray-300">
+                      & Ibu {selectedEvent.extendedProps.partnerName}
+                    </p>
+
+                    <div className="mt-4 h-px w-full bg-gray-200 dark:bg-gray-700"></div>
+
+                    <div className="mt-4 flex justify-between">
+                      <div>
+                        <p className="text-sm text-gray-500">Tgl Pemberkatan</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedEvent.extendedProps.originalDate}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">Usia Pernikahan</p>
+                        <p className="font-bold text-green-600 text-lg">
+                          {selectedEvent.extendedProps.ageOrAnniversary} Tahun
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="mt-6">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Enter Start Date
-                </label>
-                <div className="relative">
-                  <input
-                    id="event-start-date"
-                    type="date"
-                    value={eventStartDate}
-                    onChange={(e) => setEventStartDate(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Enter End Date
-                </label>
-                <div className="relative">
-                  <input
-                    id="event-end-date"
-                    type="date"
-                    value={eventEndDate}
-                    onChange={(e) => setEventEndDate(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
+              {/* Tombol Tutup */}
               <button
                 onClick={closeModal}
-                type="button"
-                className="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
+                className="mt-8 w-full rounded-lg bg-gray-900 py-3 font-medium text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
               >
-                Close
-              </button>
-              <button
-                onClick={handleAddOrUpdateEvent}
-                type="button"
-                className="btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
-              >
-                {selectedEvent ? "Update Changes" : "Add Event"}
+                Tutup Peringatan
               </button>
             </div>
-          </div>
+          )}
         </Modal>
       </div>
     </>
-  );
-};
-
-const renderEventContent = (eventInfo: any) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
-  return (
-    <div
-      className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}
-    >
-      <div className="fc-daygrid-event-dot"></div>
-      <div className="fc-event-time">{eventInfo.timeText}</div>
-      <div className="fc-event-title">{eventInfo.event.title}</div>
-    </div>
   );
 };
 
