@@ -298,10 +298,11 @@ const TambahJemaat: React.FC = () => {
                   className="relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-5 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                   onChange={handleChange}
                 >
+                  <option value="Sekolah Minggu">Sekolah Minggu</option>
+                  <option value="Remaja">Remaja</option>
+                  <option value="Pemuda">Pemuda</option>
                   <option value="Perkaria">Perkaria (Pria)</option>
                   <option value="Perkauan">Perkauan (Wanita)</option>
-                  <option value="Remaja & Pemuda">Remaja & Pemuda</option>
-                  <option value="Anak & Tunas Remaja">Anak & Tunas Remaja</option>
                   <option value="Lansia">Lansia</option>
                 </select>
               </div>

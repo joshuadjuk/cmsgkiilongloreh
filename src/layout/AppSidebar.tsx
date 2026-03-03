@@ -64,10 +64,11 @@ const othersItems: NavItem[] = [
     icon: <GroupIcon />, // Ganti dengan icon yang kamu punya
     name: "Per Seksi / Unsur",
     subItems: [
+      { name: "Sekolah Minggu", path: "/seksi/sekolah-minggu", pro: false },
+      { name: "Remaja", path: "/seksi/remaja", pro: false },
+      { name: "Pemuda", path: "/seksi/pemuda", pro: false },
       { name: "Perkaria", path: "/seksi/perkaria", pro: false },
       { name: "Perkauan", path: "/seksi/perkauan", pro: false },
-      { name: "Anak & Tunas Remaja", path: "/seksi/anak-tunas-remaja", pro: false },
-      { name: "Remaja & Pemuda", path: "/seksi/remaja-pemuda", pro: false },
       { name: "Lansia", path: "/seksi/lansia", pro: false },
     ],
   },

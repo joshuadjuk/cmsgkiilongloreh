@@ -116,6 +116,32 @@ const DataKeluarga: React.FC = () => {
     );
   });
 
+  // Fungsi untuk memisahkan dan mengurutkan anggota keluarga
+  const getParentsAndChildren = (anggota: Jemaat[]) => {
+    // Ambil Kepala Keluarga dan Istri
+    const parents = anggota.filter(m => m.hubungan_keluarga === 'Kepala Keluarga' || m.hubungan_keluarga === 'Istri');
+    
+    // Pastikan Kepala Keluarga di atas Istri
+    parents.sort((a, b) => {
+      if (a.hubungan_keluarga === 'Kepala Keluarga') return -1;
+      if (b.hubungan_keluarga === 'Kepala Keluarga') return 1;
+      return 0;
+    });
+
+    // Ambil Anak dan Famili Lain, urutkan berdasarkan tanggal lahir (Paling tua/tanggal paling awal di atas)
+    const children = anggota
+      .filter(m => m.hubungan_keluarga !== 'Kepala Keluarga' && m.hubungan_keluarga !== 'Istri')
+      .sort((a, b) => {
+        // Jika tidak ada tanggal lahir, taruh di bawah
+        if (!a.tanggal_lahir || a.tanggal_lahir === '0000-00-00') return 1;
+        if (!b.tanggal_lahir || b.tanggal_lahir === '0000-00-00') return -1;
+        
+        return new Date(a.tanggal_lahir).getTime() - new Date(b.tanggal_lahir).getTime();
+      });
+
+    return { parents, children };
+  };
+
   return (
     <>
       <PageBreadcrumb pageTitle="Data Keluarga Jemaat" />
@@ -183,7 +209,7 @@ const DataKeluarga: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* KOLOM AKSI (PERBAIKAN) */}
+                  {/* KOLOM AKSI */}
                   <div className="flex items-center justify-center p-3 xl:p-5">
                     <button 
                       onClick={() => handleOpenDetail(fam)} 
@@ -235,38 +261,90 @@ const DataKeluarga: React.FC = () => {
 
             {/* Body Modal - Scrollable Tabel Anggota */}
             <div className="p-6 overflow-y-auto">
-              <h4 className="mb-4 text-lg font-semibold text-black dark:text-white">Anggota Keluarga ({selectedFamily.anggota.length} Jiwa)</h4>
               
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-                  <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                      <th className="px-4 py-3">Nama Lengkap</th>
-                      <th className="px-4 py-3 text-center">Hubungan</th>
-                      <th className="px-4 py-3 text-center">L/P</th>
-                      <th className="px-4 py-3">Tgl Lahir</th>
-                      <th className="px-4 py-3">Seksi / Unsur</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedFamily.anggota.map((member, idx) => (
-                      <tr key={idx} className="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{member.nama_lengkap}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block rounded px-2 py-1 text-xs font-semibold
-                            ${member.hubungan_keluarga === 'Kepala Keluarga' ? 'bg-blue-100 text-blue-700' : 
-                              member.hubungan_keluarga === 'Istri' ? 'bg-pink-100 text-pink-700' : 'bg-green-100 text-green-700'}`}>
-                            {member.hubungan_keluarga}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">{member.jenis_kelamin === 'Laki-Laki' ? 'L' : 'P'}</td>
-                        <td className="px-4 py-3">{member.tanggal_lahir && member.tanggal_lahir !== '0000-00-00' ? member.tanggal_lahir : '-'}</td>
-                        <td className="px-4 py-3">{member.seksi}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {(() => {
+                const { parents, children } = getParentsAndChildren(selectedFamily.anggota);
+                return (
+                  <>
+                    {/* TABEL ORANG TUA */}
+                    <div className="mb-6">
+                      <h4 className="mb-3 text-lg font-semibold text-black dark:text-white">Orang Tua</h4>
+                      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                          <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            <tr>
+                              <th className="px-4 py-3 w-2/5">Nama Lengkap</th>
+                              <th className="px-4 py-3 text-center">Hubungan</th>
+                              <th className="px-4 py-3 text-center">L/P</th>
+                              <th className="px-4 py-3">Tgl Lahir</th>
+                              <th className="px-4 py-3">Seksi / Unsur</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parents.length > 0 ? parents.map((member, idx) => (
+                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{member.nama_lengkap}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`inline-block rounded px-2 py-1 text-xs font-semibold
+                                    ${member.hubungan_keluarga === 'Kepala Keluarga' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                                    {member.hubungan_keluarga}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">{member.jenis_kelamin === 'Laki-Laki' ? 'L' : 'P'}</td>
+                                <td className="px-4 py-3">{member.tanggal_lahir && member.tanggal_lahir !== '0000-00-00' ? member.tanggal_lahir : '-'}</td>
+                                <td className="px-4 py-3">{member.seksi}</td>
+                              </tr>
+                            )) : (
+                               <tr>
+                                  <td colSpan={5} className="px-4 py-3 text-center text-gray-500">Tidak ada data Orang Tua</td>
+                               </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* TABEL ANAK / FAMILI LAIN */}
+                    <div>
+                      <h4 className="mb-3 text-lg font-semibold text-black dark:text-white">Anak & Famili Lain <span className="text-sm font-normal text-gray-500">({children.length} Jiwa)</span></h4>
+                      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                          <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            <tr>
+                              <th className="px-4 py-3 w-2/5">Nama Lengkap</th>
+                              <th className="px-4 py-3 text-center">Hubungan</th>
+                              <th className="px-4 py-3 text-center">L/P</th>
+                              <th className="px-4 py-3">Tgl Lahir</th>
+                              <th className="px-4 py-3">Seksi / Unsur</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {children.length > 0 ? children.map((member, idx) => (
+                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{member.nama_lengkap}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`inline-block rounded px-2 py-1 text-xs font-semibold
+                                    ${member.hubungan_keluarga === 'Anak' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
+                                    {member.hubungan_keluarga}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">{member.jenis_kelamin === 'Laki-Laki' ? 'L' : 'P'}</td>
+                                <td className="px-4 py-3">{member.tanggal_lahir && member.tanggal_lahir !== '0000-00-00' ? member.tanggal_lahir : '-'}</td>
+                                <td className="px-4 py-3">{member.seksi}</td>
+                              </tr>
+                            )) : (
+                                <tr>
+                                  <td colSpan={5} className="px-4 py-3 text-center text-gray-500">Tidak ada data Anak/Famili Lain</td>
+                               </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
             </div>
 
             {/* Footer Modal */}

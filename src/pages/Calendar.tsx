@@ -36,7 +36,7 @@ const Calendar: React.FC = () => {
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
-  const API_URL = "http://localhost:8000/jemaat.php";
+  const API_URL = "https://gereja.eternity.my.id/api-gkii/jemaat.php";
 
   // Ambil Data saat halaman dimuat
   useEffect(() => {

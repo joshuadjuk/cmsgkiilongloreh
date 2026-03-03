@@ -23,13 +23,14 @@ interface Jemaat {
 const seksiMap: Record<string, string> = {
   'perkaria': 'Perkaria',
   'perkauan': 'Perkauan',
-  'anak-tunas-remaja': 'Anak & Tunas Remaja',
-  'remaja-pemuda': 'Remaja & Pemuda',
+  'sekolah-minggu': 'Sekolah Minggu',
+  'pemuda': 'Pemuda',
+  'remaja': 'Remaja',
   'lansia': 'Lansia',
 };
 
 const DataSeksi: React.FC = () => {
-  // Ambil parameter dari URL (misal: "anak-tunas-remaja")
+  // Ambil parameter dari URL (misal: "sekolah-minggu")
   const { seksiParam } = useParams<{ seksiParam: string }>();
   
   // Terjemahkan param URL ke nama aslinya. Jika tidak cocok, kosongkan.

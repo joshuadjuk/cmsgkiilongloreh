@@ -16,7 +16,7 @@ interface Jemaat {
   tanggal_lahir: string;
   tanggal_perkawinan?: string;
   created_at?: string;
-  nama_istri?: string; // Khusus untuk tabel anniversary
+  nama_istri?: string; 
 }
 
 interface TrendData {
@@ -25,10 +25,16 @@ interface TrendData {
   jumlah: number;
 }
 
+// Interface baru untuk menyimpan detail Pria & Wanita
+interface GenderStats {
+  total: number;
+  pria: number;
+  wanita: number;
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   
-  // State Metrik
   const [stats, setStats] = useState({
     totalJiwa: 0,
     totalKeluarga: 0,
@@ -40,17 +46,18 @@ export default function Home() {
     baruBulanIni: 0,
   });
 
-  const [seksiData, setSeksiData] = useState<Record<string, number>>({});
-  const [kelompokDoaData, setKelompokDoaData] = useState<Record<string, number>>({});
+  // State yang diupdate untuk menampung data Pria & Wanita
+  const [seksiData, setSeksiData] = useState<Record<string, GenderStats>>({});
+  const [kelompokDoaData, setKelompokDoaData] = useState<Record<string, GenderStats>>({});
+  
   const [statusNikahData, setStatusNikahData] = useState<Record<string, number>>({});
   const [komposisiKeluarga, setKomposisiKeluarga] = useState<Record<string, number>>({});
   const [ultahBulanIni, setUltahBulanIni] = useState<Jemaat[]>([]);
   const [annivBulanIni, setAnnivBulanIni] = useState<Jemaat[]>([]);
   const [trendPertumbuhan, setTrendPertumbuhan] = useState<TrendData[]>([]);
   
-  // State Piramida Penduduk
   const [demografiUmur, setDemografiUmur] = useState({
-    pria: [0, 0, 0, 0, 0], // <12, 13-25, 26-40, 41-60, >60
+    pria: [0, 0, 0, 0, 0], 
     wanita: [0, 0, 0, 0, 0]
   });
 
@@ -71,18 +78,19 @@ export default function Home() {
         
         let pria = 0, wanita = 0, baptis = 0, tetap = 0, simpat = 0, baruBulanIni = 0;
         const kkSet = new Set();
-        const seksiCount: Record<string, number> = {};
-        const kdCount: Record<string, number> = {};
+        
+        // Objek untuk menampung data yang lebih detail
+        const seksiCount: Record<string, GenderStats> = {};
+        const kdCount: Record<string, GenderStats> = {};
+        
         const nikahCount: Record<string, number> = {};
-        const hkCount: Record<string, number> = {}; // Hubungan Keluarga
+        const hkCount: Record<string, number> = {}; 
         const ultahList: Jemaat[] = [];
         const annivList: Jemaat[] = [];
 
-        // Setup Piramida Umur
         const dPria = [0, 0, 0, 0, 0];
         const dWanita = [0, 0, 0, 0, 0];
 
-        // Siapkan Grafik 6 Bulan Terakhir
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
         const trendData: TrendData[] = [];
         const trendMap: Record<string, number> = {}; 
@@ -102,11 +110,19 @@ export default function Home() {
           if (member.anggota_jemaat === "Tetap") tetap++;
           if (member.anggota_jemaat === "Simpatisan") simpat++;
 
+          // KALKULASI SEKSI (Dipecah Laki-laki & Perempuan)
           const seksi = member.seksi || "Lainnya";
-          seksiCount[seksi] = (seksiCount[seksi] || 0) + 1;
+          if (!seksiCount[seksi]) seksiCount[seksi] = { total: 0, pria: 0, wanita: 0 };
+          seksiCount[seksi].total++;
+          if (member.jenis_kelamin === "Laki-Laki") seksiCount[seksi].pria++;
+          if (member.jenis_kelamin === "Perempuan") seksiCount[seksi].wanita++;
           
+          // KALKULASI KELOMPOK DOA (Dipecah Laki-laki & Perempuan)
           const kd = member.kelompok_doa || "Lainnya";
-          kdCount[kd] = (kdCount[kd] || 0) + 1;
+          if (!kdCount[kd]) kdCount[kd] = { total: 0, pria: 0, wanita: 0 };
+          kdCount[kd].total++;
+          if (member.jenis_kelamin === "Laki-Laki") kdCount[kd].pria++;
+          if (member.jenis_kelamin === "Perempuan") kdCount[kd].wanita++;
 
           const statusN = member.status_pernikahan || "Lainnya";
           nikahCount[statusN] = (nikahCount[statusN] || 0) + 1;
@@ -114,7 +130,6 @@ export default function Home() {
           const hk = member.hubungan_keluarga || "Lainnya";
           hkCount[hk] = (hkCount[hk] || 0) + 1;
 
-          // 1. Kalkulasi Umur & Ulang Tahun
           if (member.tanggal_lahir && member.tanggal_lahir !== "0000-00-00") {
             const tglArr = member.tanggal_lahir.split("-");
             const birthYear = parseInt(tglArr[0], 10);
@@ -134,7 +149,6 @@ export default function Home() {
             else if (member.jenis_kelamin === "Perempuan") dWanita[ageIndex]++;
           }
 
-          // 2. Kalkulasi Hari Jadi Pernikahan (Hanya Kepala Keluarga agar tidak dobel)
           if (member.tanggal_perkawinan && member.tanggal_perkawinan !== "0000-00-00" && member.hubungan_keluarga === "Kepala Keluarga" && member.status_pernikahan === "Sudah Menikah") {
             const annivMonth = parseInt(member.tanggal_perkawinan.split("-")[1], 10);
             if (annivMonth === currentMonth + 1) {
@@ -146,7 +160,6 @@ export default function Home() {
             }
           }
 
-          // 3. Kalkulasi Pertumbuhan (created_at)
           if (member.created_at && member.created_at !== "0000-00-00 00:00:00" && member.created_at !== null) {
             const datePart = member.created_at.split(" ")[0]; 
             const [yearStr, monthStr] = datePart.split("-"); 
@@ -159,7 +172,6 @@ export default function Home() {
           }
         });
 
-        // Urutkan List Tanggal
         ultahList.sort((a, b) => parseInt(a.tanggal_lahir.split("-")[2], 10) - parseInt(b.tanggal_lahir.split("-")[2], 10));
         annivList.sort((a, b) => parseInt((a.tanggal_perkawinan || "").split("-")[2], 10) - parseInt((b.tanggal_perkawinan || "").split("-")[2], 10));
 
@@ -192,9 +204,9 @@ export default function Home() {
     );
   }
 
-  const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500", "bg-red-500", "bg-teal-500"];
-  
-  // Opsi Global agar Chart aman di Dark Mode
+  // Cari angka tertinggi di Seksi untuk mengatur skala panjang Bar
+  const maxSeksi = Math.max(1, ...Object.values(seksiData).map(s => s.total));
+
   const chartTextColors = '#9CA3AF';
   const gridColors = 'rgba(156, 163, 175, 0.1)';
 
@@ -210,48 +222,33 @@ export default function Home() {
 
   const demografiOptions: any = {
     chart: { type: 'bar', stacked: true, fontFamily: "Inter, sans-serif", toolbar: { show: false }, foreColor: chartTextColors },
-    colors: ['#3B82F6', '#EC4899'], // Biru, Pink
+    colors: ['#3B82F6', '#EC4899'], 
     plotOptions: { bar: { horizontal: true, barHeight: '80%', borderRadius: 2 } },
-    dataLabels: { enabled: false },
-    stroke: { width: 0 },
+    dataLabels: { enabled: false }, stroke: { width: 0 },
     grid: { borderColor: gridColors, strokeDashArray: 4 },
-    xaxis: {
-      categories: ['Balita/Anak', 'Remaja/Pemuda', 'Dewasa Awal', 'Dewasa Akhir', 'Lansia (>60)'],
-      labels: { formatter: (val: number) => Math.abs(Math.round(val)) }
-    },
+    xaxis: { categories: ['Balita/Anak', 'Remaja/Pemuda', 'Dewasa Awal', 'Dewasa Akhir', 'Lansia (>60)'], labels: { formatter: (val: number) => Math.abs(Math.round(val)) } },
     tooltip: { theme: "dark", y: { formatter: (val: number) => Math.abs(val) + " Jiwa" } },
     legend: { position: "top" }
   };
 
   const nikahOptions: any = {
     chart: { type: "donut", fontFamily: "Inter, sans-serif", foreColor: chartTextColors },
-    labels: Object.keys(statusNikahData),
-    colors: ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444"], 
-    plotOptions: { pie: { donut: { size: '75%' } } },
-    dataLabels: { enabled: false }, stroke: { show: false },
-    legend: { position: "bottom" },
-    tooltip: { theme: "dark" }
+    labels: Object.keys(statusNikahData), colors: ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444"], 
+    plotOptions: { pie: { donut: { size: '75%' } } }, dataLabels: { enabled: false }, stroke: { show: false },
+    legend: { position: "bottom" }, tooltip: { theme: "dark" }
   };
 
   const komposisiOptions: any = {
     chart: { type: "pie", fontFamily: "Inter, sans-serif", foreColor: chartTextColors },
-    labels: Object.keys(komposisiKeluarga),
-    colors: ["#8B5CF6", "#EC4899", "#14B8A6", "#F97316"], 
+    labels: Object.keys(komposisiKeluarga), colors: ["#8B5CF6", "#EC4899", "#14B8A6", "#F97316"], 
     dataLabels: { enabled: false }, stroke: { show: false },
-    legend: { position: "bottom" },
-    tooltip: { theme: "dark" }
+    legend: { position: "bottom" }, tooltip: { theme: "dark" }
   };
 
   const baptisOptions: any = {
     chart: { type: 'radialBar', fontFamily: "Inter, sans-serif", foreColor: chartTextColors },
     colors: ['#0EA5E9'],
-    plotOptions: {
-      radialBar: {
-        hollow: { size: '65%', background: 'transparent' },
-        track: { background: gridColors },
-        dataLabels: { name: { show: false }, value: { fontSize: '28px', fontWeight: 'bold', color: '#0EA5E9' } }
-      }
-    },
+    plotOptions: { radialBar: { hollow: { size: '65%', background: 'transparent' }, track: { background: gridColors }, dataLabels: { name: { show: false }, value: { fontSize: '28px', fontWeight: 'bold', color: '#0EA5E9' } } } },
     labels: ['Sudah Baptis'],
   };
 
@@ -358,19 +355,41 @@ export default function Home() {
       {/* 3. CHART BARIS KEDUA (Seksi, Nikah, Komposisi Keluarga) */}
       <div className="grid grid-cols-12 gap-4 md:gap-6 mb-6">
         
-        {/* DISTRIBUSI SEKSI (Custom Tailwind Bar) */}
+        {/* ==================================================== */}
+        {/* DISTRIBUSI SEKSI (2 GARIS: PRIA & WANITA) */}
+        {/* ==================================================== */}
         <div className="col-span-12 xl:col-span-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark">
           <h4 className="mb-6 text-lg font-bold text-gray-900 dark:text-white">Unsur / Kategorial</h4>
-          <div className="flex flex-col gap-5">
-            {Object.entries(seksiData).sort((a,b) => b[1] - a[1]).map(([nama, jumlah], index) => {
-              const persentase = stats.totalJiwa > 0 ? ((jumlah / stats.totalJiwa) * 100).toFixed(1) : 0;
+          <div className="flex flex-col gap-6">
+            {Object.entries(seksiData).sort((a,b) => b[1].total - a[1].total).map(([nama, data], index) => {
+              // Skala bar relatif terhadap Seksi dengan anggota terbanyak
+              const lebarPria = maxSeksi > 0 ? (data.pria / maxSeksi) * 100 : 0;
+              const lebarWanita = maxSeksi > 0 ? (data.wanita / maxSeksi) * 100 : 0;
+              
               return (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-32 text-sm font-semibold text-gray-700 dark:text-gray-300 truncate" title={nama}>{nama}</div>
-                  <div className="w-full bg-gray-100 rounded-full h-3 dark:bg-gray-800 overflow-hidden">
-                    <div className={`${colors[index % colors.length]} h-3 rounded-full`} style={{ width: `${persentase}%` }}></div>
+                <div key={index}>
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{nama}</span>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{data.total} Jiwa</span>
                   </div>
-                  <div className="w-12 text-right text-sm font-bold text-gray-900 dark:text-white">{jumlah}</div>
+                  
+                  {/* Garis Pria */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-bold text-blue-500 w-3">L</span>
+                    <div className="w-full bg-blue-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${lebarPria}%` }}></div>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.pria}</span>
+                  </div>
+
+                  {/* Garis Wanita */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-pink-500 w-3">P</span>
+                    <div className="w-full bg-pink-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-pink-500 h-1.5 rounded-full" style={{ width: `${lebarWanita}%` }}></div>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.wanita}</span>
+                  </div>
                 </div>
               );
             })}
@@ -385,7 +404,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KOMPOSISI KELUARGA (BARU) */}
+        {/* KOMPOSISI KELUARGA */}
         <div className="col-span-12 md:col-span-6 xl:col-span-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark flex flex-col items-center">
           <h4 className="mb-2 text-lg font-bold text-gray-900 dark:text-white self-start">Komposisi Keluarga</h4>
           <div className="flex-grow flex items-center justify-center w-full mt-4">
@@ -397,17 +416,35 @@ export default function Home() {
 
       {/* 4. BARIS KETIGA (Kelompok Doa & Status Baptis) */}
       <div className="grid grid-cols-12 gap-4 md:gap-6 mb-8">
+         {/* ==================================================== */}
+         {/* KELOMPOK DOA (DIPISAHKAN L & P) */}
+         {/* ==================================================== */}
          <div className="col-span-12 md:col-span-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark">
             <h4 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Sebaran Kelompok Doa</h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {Object.entries(kelompokDoaData).sort((a,b) => b[1] - a[1]).slice(0, 4).map(([nama, jumlah], index) => (
-                <div key={index} className="rounded-xl border border-gray-100 p-4 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700 text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">{nama}</p>
-                  <p className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-2">{jumlah}</p>
+              {Object.entries(kelompokDoaData).sort((a,b) => b[1].total - a[1].total).slice(0, 4).map(([nama, data], index) => (
+                <div key={index} className="rounded-xl border border-gray-100 p-4 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700 text-center flex flex-col justify-between">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">{nama}</p>
+                  <p className="text-3xl font-extrabold text-gray-800 dark:text-white mb-2">{data.total}</p>
+                  
+                  {/* Pemisah Pria & Wanita */}
+                  <div className="flex justify-center items-center gap-3 mt-2 border-t border-gray-200 dark:border-gray-700 pt-2">
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-bold text-blue-500 leading-none">{data.pria}</span>
+                      <span className="text-[9px] text-gray-400 font-semibold uppercase mt-1">Pria</span>
+                    </div>
+                    <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-bold text-pink-500 leading-none">{data.wanita}</span>
+                      <span className="text-[9px] text-gray-400 font-semibold uppercase mt-1">Wanita</span>
+                    </div>
+                  </div>
+
                 </div>
               ))}
             </div>
          </div>
+         
          <div className="col-span-12 md:col-span-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark flex items-center justify-between">
             <div>
               <h4 className="text-lg font-bold text-gray-900 dark:text-white">Sudah Baptis</h4>
@@ -465,7 +502,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tabel Pernikahan (BARU) */}
+        {/* Tabel Pernikahan */}
         <div className="col-span-12 xl:col-span-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark">
           <div className="mb-6">
             <h4 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
