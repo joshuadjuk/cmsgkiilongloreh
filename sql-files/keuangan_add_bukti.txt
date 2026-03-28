@@ -1,0 +1,11 @@
+-- ============================================================
+-- GKII Longloreh - Tambah kolom bukti_file ke keuangan_transaksi
+-- Jalankan SETELAH tabel keuangan_transaksi sudah dibuat
+-- ============================================================
+
+USE `sql_gereja_local`;
+
+ALTER TABLE `keuangan_transaksi`
+  ADD COLUMN `bukti_file` VARCHAR(255) DEFAULT NULL
+  COMMENT 'Nama file bukti/nota (disimpan di server folder uploads/bukti/)'
+  AFTER `keterangan`;

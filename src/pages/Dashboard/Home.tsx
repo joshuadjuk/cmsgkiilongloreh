@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import ReactApexChart from "react-apexcharts";
+import { useAuth } from "../../context/AuthContext";
+
+const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
+const formatRupiah = (n: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 interface Jemaat {
   id: number;
@@ -32,8 +38,19 @@ interface GenderStats {
   wanita: number;
 }
 
+interface KeuanganSummary {
+  saldo_total: number;
+  pemasukan_bulan_ini: number;
+  pengeluaran_bulan_ini: number;
+  bulan_label: string;
+}
+
 export default function Home() {
+  const { user, token } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [loading, setLoading] = useState(true);
+  const [keuangan, setKeuangan] = useState<KeuanganSummary | null>(null);
   
   const [stats, setStats] = useState({
     totalJiwa: 0,
@@ -64,6 +81,17 @@ export default function Home() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Fetch keuangan summary hanya untuk admin
+  useEffect(() => {
+    if (!isAdmin || !token) return;
+    fetch(`${KEUANGAN_URL}?action=dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(res => { if (res.status === 'success') setKeuangan(res.data); })
+      .catch(console.error);
+  }, [isAdmin, token]);
 
   const fetchDashboardData = async () => {
     try {
@@ -252,10 +280,78 @@ export default function Home() {
     labels: ['Sudah Baptis'],
   };
 
+  // Jemaat yang ultah hari ini
+  const todayDay = new Date().getDate();
+  const ultahHariIni = ultahBulanIni.filter(m =>
+    parseInt(m.tanggal_lahir.split('-')[2], 10) === todayDay
+  );
+
   return (
     <>
       <PageMeta title="Dashboard Jemaat | CMS GKII" description="Ringkasan Statistik Data Jemaat Gereja" />
-      
+
+      {/* BANNER ULANG TAHUN HARI INI */}
+      {ultahHariIni.length > 0 && (
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-400 p-4 shadow-md">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-3xl">🎂</span>
+            <div>
+              <p className="font-bold text-white text-sm">Ulang Tahun Hari Ini!</p>
+              <p className="text-yellow-100 text-sm">
+                {ultahHariIni.map(m => m.nama_lengkap).join(', ')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RINGKASAN KEUANGAN — Admin Only */}
+      {isAdmin && keuangan && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Ringkasan Keuangan — {keuangan.bulan_label}</h3>
+            <Link to="/keuangan" className="text-xs text-brand-500 hover:text-brand-600 font-semibold">
+              Dashboard Keuangan →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-green-100 bg-green-50 dark:bg-green-500/10 dark:border-green-500/20 p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500 text-white">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">Saldo Kas</p>
+                <p className="text-lg font-extrabold text-green-700 dark:text-green-300">{formatRupiah(keuangan.saldo_total)}</p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 dark:bg-blue-500/10 dark:border-blue-500/20 p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Pemasukan</p>
+                <p className="text-lg font-extrabold text-blue-700 dark:text-blue-300">{formatRupiah(keuangan.pemasukan_bulan_ini)}</p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-red-100 bg-red-50 dark:bg-red-500/10 dark:border-red-500/20 p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500 text-white">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">Pengeluaran</p>
+                <p className="text-lg font-extrabold text-red-700 dark:text-red-300">{formatRupiah(keuangan.pengeluaran_bulan_ini)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. KUMPULAN KARTU METRIK UTAMA */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4 mb-6">
         
@@ -362,34 +458,62 @@ export default function Home() {
           <h4 className="mb-6 text-lg font-bold text-gray-900 dark:text-white">Unsur / Kategorial</h4>
           <div className="flex flex-col gap-6">
             {Object.entries(seksiData).sort((a,b) => b[1].total - a[1].total).map(([nama, data], index) => {
-              // Skala bar relatif terhadap Seksi dengan anggota terbanyak
-              const lebarPria = maxSeksi > 0 ? (data.pria / maxSeksi) * 100 : 0;
+              const lebarPria   = maxSeksi > 0 ? (data.pria   / maxSeksi) * 100 : 0;
               const lebarWanita = maxSeksi > 0 ? (data.wanita / maxSeksi) * 100 : 0;
-              
+
+              // Perkaria = khusus Laki-laki, Perkauan = khusus Perempuan
+              const hanyaPria   = nama === 'Perkaria';
+              const hanyaWanita = nama === 'Perkauan';
+              const jumlahTampil = hanyaPria ? data.pria : hanyaWanita ? data.wanita : data.total;
+
               return (
                 <div key={index}>
                   <div className="flex justify-between items-end mb-2">
                     <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{nama}</span>
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{data.total} Jiwa</span>
-                  </div>
-                  
-                  {/* Garis Pria */}
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-bold text-blue-500 w-3">L</span>
-                    <div className="w-full bg-blue-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${lebarPria}%` }}></div>
-                    </div>
-                    <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.pria}</span>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{jumlahTampil} Jiwa</span>
                   </div>
 
-                  {/* Garis Wanita */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-pink-500 w-3">P</span>
-                    <div className="w-full bg-pink-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-pink-500 h-1.5 rounded-full" style={{ width: `${lebarWanita}%` }}></div>
+                  {/* Perkaria: hanya bar Laki-laki */}
+                  {hanyaPria && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-blue-500 w-3">L</span>
+                      <div className="w-full bg-blue-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${lebarPria}%` }}></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.pria}</span>
                     </div>
-                    <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.wanita}</span>
-                  </div>
+                  )}
+
+                  {/* Perkauan: hanya bar Perempuan */}
+                  {hanyaWanita && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-pink-500 w-3">P</span>
+                      <div className="w-full bg-pink-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-pink-500 h-1.5 rounded-full" style={{ width: `${lebarWanita}%` }}></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.wanita}</span>
+                    </div>
+                  )}
+
+                  {/* Seksi lain: tampilkan keduanya */}
+                  {!hanyaPria && !hanyaWanita && (
+                    <>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[10px] font-bold text-blue-500 w-3">L</span>
+                        <div className="w-full bg-blue-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${lebarPria}%` }}></div>
+                        </div>
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.pria}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-pink-500 w-3">P</span>
+                        <div className="w-full bg-pink-50 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-pink-500 h-1.5 rounded-full" style={{ width: `${lebarWanita}%` }}></div>
+                        </div>
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400 w-6 text-right">{data.wanita}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })}

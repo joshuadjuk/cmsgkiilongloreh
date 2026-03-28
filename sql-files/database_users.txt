@@ -1,0 +1,35 @@
+-- ============================================================
+-- GKII Longloreh - Login System: Tabel Users
+-- Database: sql_gereja_local
+-- ============================================================
+-- LANGKAH:
+-- 1. Jalankan query CREATE TABLE di bawah ini
+-- 2. Upload file api-gkii/init_users.php ke server
+-- 3. Akses https://gereja.eternity.my.id/api-gkii/init_users.php
+--    di browser SEKALI untuk membuat user default
+-- 4. HAPUS init_users.php dari server setelah berhasil!
+-- ============================================================
+
+USE `sql_gereja_local`;
+
+CREATE TABLE IF NOT EXISTS `users` (
+  `id`           INT          NOT NULL AUTO_INCREMENT,
+  `username`     VARCHAR(50)  NOT NULL UNIQUE,
+  `password`     VARCHAR(255) NOT NULL,
+  `nama_lengkap` VARCHAR(100) NOT NULL,
+  `role`         ENUM('admin','bendahara','sekretaris') NOT NULL DEFAULT 'sekretaris',
+  `is_active`    TINYINT(1)   NOT NULL DEFAULT 1,
+  `created_at`   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- User default dibuat via init_users.php (password: gkii2024)
+-- Default credentials setelah init_users.php dijalankan:
+--   username: sekretaris | password: gkii2024
+--   username: admin      | password: gkii2024
+--   username: bendahara  | password: gkii2024
+--
+-- PENTING: Ganti password setelah login pertama!
+-- ============================================================

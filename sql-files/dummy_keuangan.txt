@@ -1,0 +1,41 @@
+-- ============================================================
+-- GKII Longloreh - Dummy Data Keuangan
+-- Database: sql_gereja_local
+-- dicatat_oleh: 3 = bendahara
+-- ============================================================
+
+USE `sql_gereja_local`;
+
+INSERT INTO `keuangan_transaksi` (`tanggal`, `tipe`, `kategori`, `jumlah`, `keterangan`, `dicatat_oleh`) VALUES
+
+-- ========== MARET 2026 ==========
+('2026-03-02', 'pemasukan',   'Persembahan Umum',         850000.00,  'Ibadah Minggu, 2 Maret 2026',              3),
+('2026-03-02', 'pemasukan',   'Perpuluhan',               320000.00,  'Perpuluhan jemaat, 2 Maret 2026',          3),
+('2026-03-05', 'pengeluaran', 'Operasional Gereja',       180000.00,  'Pembayaran tagihan listrik bulan Februari', 3),
+('2026-03-09', 'pemasukan',   'Persembahan Umum',         920000.00,  'Ibadah Minggu, 9 Maret 2026',              3),
+('2026-03-09', 'pemasukan',   'Persembahan Diakonia',     250000.00,  'Persembahan sosial/diakonia',               3),
+('2026-03-12', 'pengeluaran', 'Sosial/Diakonia',          300000.00,  'Bantuan sembako jemaat yang sakit (Ibu Maria)', 3),
+('2026-03-16', 'pemasukan',   'Persembahan Umum',         780000.00,  'Ibadah Minggu, 16 Maret 2026',             3),
+('2026-03-16', 'pemasukan',   'Persembahan Pembangunan',  500000.00,  'Persembahan khusus pembangunan gedung',     3),
+('2026-03-20', 'pengeluaran', 'Operasional Gereja',        75000.00,  'Pembelian alat kebersihan gereja',          3),
+('2026-03-23', 'pemasukan',   'Persembahan Umum',         870000.00,  'Ibadah Minggu, 23 Maret 2026',             3),
+('2026-03-23', 'pemasukan',   'Perpuluhan',               410000.00,  'Perpuluhan jemaat, 23 Maret 2026',         3),
+('2026-03-25', 'pengeluaran', 'Honorarium/Gaji',          600000.00,  'Honorarium pelayan ibadah bulan Maret',    3),
+('2026-03-28', 'pengeluaran', 'Pembangunan & Inventaris', 450000.00,  'Pembelian kursi plastik 10 buah',           3),
+
+-- ========== FEBRUARI 2026 ==========
+('2026-02-02', 'pemasukan',   'Persembahan Umum',         800000.00,  'Ibadah Minggu, 2 Februari 2026',           3),
+('2026-02-02', 'pemasukan',   'Perpuluhan',               280000.00,  'Perpuluhan jemaat, 2 Februari 2026',       3),
+('2026-02-05', 'pengeluaran', 'Operasional Gereja',       175000.00,  'Pembayaran tagihan listrik bulan Januari',  3),
+('2026-02-09', 'pemasukan',   'Persembahan Umum',         750000.00,  'Ibadah Minggu, 9 Februari 2026',           3),
+('2026-02-16', 'pemasukan',   'Persembahan Umum',         830000.00,  'Ibadah Minggu, 16 Februari 2026',          3),
+('2026-02-16', 'pemasukan',   'Persembahan Pembangunan',  300000.00,  'Persembahan pembangunan gedung ibadah',     3),
+('2026-02-20', 'pengeluaran', 'Honorarium/Gaji',          600000.00,  'Honorarium pelayan ibadah bulan Februari', 3),
+('2026-02-23', 'pemasukan',   'Persembahan Umum',         690000.00,  'Ibadah Minggu, 23 Februari 2026',          3);
+
+-- ============================================================
+-- Saldo awal (opsional — isi jika ingin saldo awal tidak nol)
+-- Misalnya saldo kas per 1 Januari 2026 = Rp 2.500.000
+-- ============================================================
+INSERT INTO `keuangan_saldo_awal` (`bulan`, `tahun`, `jumlah`, `keterangan`, `dibuat_oleh`) VALUES
+(1, 2026, 2500000.00, 'Saldo kas awal tahun 2026', 3);

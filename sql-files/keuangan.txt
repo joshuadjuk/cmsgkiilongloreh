@@ -1,0 +1,57 @@
+-- ============================================================
+-- GKII Longloreh - Modul Keuangan (Bendahara)
+-- Database: sql_gereja_local
+-- ============================================================
+
+USE `sql_gereja_local`;
+
+-- --------------------------------------------------------
+-- Tabel: keuangan_transaksi
+-- Menyimpan semua transaksi pemasukan & pengeluaran
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `keuangan_transaksi` (
+  `id`           INT(11)          NOT NULL AUTO_INCREMENT,
+  `tanggal`      DATE             NOT NULL,
+  `tipe`         ENUM('pemasukan','pengeluaran') NOT NULL,
+  `kategori`     VARCHAR(100)     NOT NULL,
+  `jumlah`       DECIMAL(15,2)    NOT NULL DEFAULT 0.00,
+  `keterangan`   TEXT             DEFAULT NULL,
+  `dicatat_oleh` INT(11)          NOT NULL,
+  `created_at`   TIMESTAMP        NULL DEFAULT current_timestamp(),
+  `updated_at`   TIMESTAMP        NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_tanggal`      (`tanggal`),
+  KEY `idx_tipe`         (`tipe`),
+  KEY `idx_dicatat_oleh` (`dicatat_oleh`),
+  CONSTRAINT `fk_transaksi_user`
+    FOREIGN KEY (`dicatat_oleh`) REFERENCES `users`(`id`)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Tabel: keuangan_saldo_awal
+-- Saldo pembuka kas (diisi sekali saat pertama pakai sistem)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `keuangan_saldo_awal` (
+  `id`          INT(11)       NOT NULL AUTO_INCREMENT,
+  `bulan`       TINYINT(2)    NOT NULL COMMENT '1-12',
+  `tahun`       YEAR          NOT NULL,
+  `jumlah`      DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  `keterangan`  VARCHAR(255)  DEFAULT NULL,
+  `dibuat_oleh` INT(11)       NOT NULL,
+  `created_at`  TIMESTAMP     NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_bulan_tahun` (`bulan`,`tahun`),
+  CONSTRAINT `fk_saldo_user`
+    FOREIGN KEY (`dibuat_oleh`) REFERENCES `users`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- Kategori Pemasukan:
+--   Persembahan Umum, Perpuluhan, Persembahan Pembangunan,
+--   Persembahan Diakonia, Lain-lain
+--
+-- Kategori Pengeluaran:
+--   Operasional Gereja, Honorarium/Gaji, Sosial/Diakonia,
+--   Pembangunan & Inventaris, Lain-lain
+-- ============================================================
