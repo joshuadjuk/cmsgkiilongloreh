@@ -29,7 +29,7 @@ const AppHeader: React.FC = () => {
   const [pwLoading, setPwLoading] = useState(false);
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
 
   const userMenuRef = useRef<HTMLDivElement>(null);

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router';
 import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import Label from '../../components/form/Label';
-import Button from '../../components/ui/button/Button';
 import { useAuth } from '../../context/AuthContext';
 
 const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
@@ -268,9 +267,9 @@ export default function EditTransaksi() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button type="button" variant="outline" className="flex-1 justify-center" onClick={() => navigate('/keuangan/transaksi')}>
+              <button type="button" className="flex-1 justify-center border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => navigate('/keuangan/transaksi')}>
                 Batal
-              </Button>
+              </button>
               <button type="submit" disabled={isLoading}
                 className={`flex-1 py-3 px-4 rounded-lg text-sm font-semibold text-white transition-colors ${tipe === 'pemasukan' ? 'bg-green-500 hover:bg-green-600 disabled:bg-green-300' : 'bg-red-500 hover:bg-red-600 disabled:bg-red-300'}`}>
                 {isLoading ? 'Menyimpan...' : 'Update Transaksi'}

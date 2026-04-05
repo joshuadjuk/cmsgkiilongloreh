@@ -4,6 +4,9 @@
 // GET  → publik, tanpa auth
 // ============================================================
 
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
+
 require_once 'config/database.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -14,12 +17,18 @@ if ($method !== 'GET') {
     exit();
 }
 
-// Statistik jemaat
+$GALERI_BASE = 'https://gereja.eternity.my.id/api-gkii/uploads/galeri/';
+
+// Statistik jemaat per seksi
 $stmtStats = $db->query(
     "SELECT
-       COUNT(*)                                              AS total_jiwa,
-       COUNT(DISTINCT no_kk)                                AS total_keluarga,
-       SUM(CASE WHEN status_babtis = 'Sudah Babtis' THEN 1 ELSE 0 END) AS total_baptis
+       COUNT(*) AS total,
+       SUM(CASE WHEN seksi = 'Sekolah Minggu' THEN 1 ELSE 0 END) AS sekolah_minggu,
+       SUM(CASE WHEN seksi = 'Remaja'         THEN 1 ELSE 0 END) AS remaja,
+       SUM(CASE WHEN seksi = 'Pemuda'         THEN 1 ELSE 0 END) AS pemuda,
+       SUM(CASE WHEN seksi = 'Perkauan'       THEN 1 ELSE 0 END) AS perkauan,
+       SUM(CASE WHEN seksi = 'Perkaria'       THEN 1 ELSE 0 END) AS perkaria,
+       SUM(CASE WHEN seksi = 'Lansia'         THEN 1 ELSE 0 END) AS lansia
      FROM jemaat"
 );
 $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
@@ -44,16 +53,39 @@ $stmtPengumuman = $db->query(
 );
 $pengumuman = $stmtPengumuman->fetchAll(PDO::FETCH_ASSOC);
 
+// Galeri foto
+$galeri = [];
+try {
+    $stmtGaleri = $db->query(
+        "SELECT id, judul, foto FROM galeri ORDER BY urutan ASC, id DESC LIMIT 60"
+    );
+    $galeriRows = $stmtGaleri->fetchAll(PDO::FETCH_ASSOC);
+    $galeri = array_map(function($row) use ($GALERI_BASE) {
+        return [
+            'id'       => $row['id'],
+            'judul'    => $row['judul'],
+            'foto_url' => $GALERI_BASE . $row['foto'],
+        ];
+    }, $galeriRows);
+} catch (Exception $e) {
+    // tabel galeri belum ada, lanjut tanpa galeri
+}
+
 echo json_encode([
     'status' => 'success',
     'data'   => [
-        'stats'      => [
-            'total_jiwa'     => (int)$stats['total_jiwa'],
-            'total_keluarga' => (int)$stats['total_keluarga'],
-            'total_baptis'   => (int)$stats['total_baptis'],
+        'stats' => [
+            'total'          => (int)$stats['total'],
+            'sekolah_minggu' => (int)$stats['sekolah_minggu'],
+            'remaja'         => (int)$stats['remaja'],
+            'pemuda'         => (int)$stats['pemuda'],
+            'perkauan'       => (int)$stats['perkauan'],
+            'perkaria'       => (int)$stats['perkaria'],
+            'lansia'         => (int)$stats['lansia'],
         ],
         'jadwal'     => $jadwal,
         'pengumuman' => $pengumuman,
+        'galeri'     => $galeri,
     ],
 ], JSON_UNESCAPED_UNICODE);
 ?>

@@ -22,6 +22,7 @@ import RiwayatTransaksi from "./pages/Keuangan/RiwayatTransaksi";
 import LaporanBulanan from "./pages/Keuangan/LaporanBulanan";
 import ManajemenUser from "./pages/Admin/ManajemenUser";
 import ManajemenKonten from "./pages/Admin/ManajemenKonten";
+import ManajemenGaleri from "./pages/Admin/ManajemenGaleri";
 import LandingPage from "./pages/LandingPage";
 
 export default function App() {
@@ -62,6 +63,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['sekretaris', 'admin']} />}>
             <Route element={<AppLayout />}>
               <Route path="/konten" element={<ManajemenKonten />} />
+              <Route path="/galeri" element={<ManajemenGaleri />} />
             </Route>
           </Route>
 

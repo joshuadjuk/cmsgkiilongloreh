@@ -4,7 +4,6 @@ import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import Label from '../../components/form/Label';
 import Input from '../../components/form/input/InputField';
-import Button from '../../components/ui/button/Button';
 import { useAuth } from '../../context/AuthContext';
 
 const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
@@ -275,14 +274,13 @@ export default function TambahTransaksi() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                className="flex-1 justify-center"
+                className="flex-1 justify-center border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 onClick={() => navigate('/keuangan')}
               >
                 Batal
-              </Button>
+              </button>
               <button
                 type="submit"
                 disabled={isLoading}
