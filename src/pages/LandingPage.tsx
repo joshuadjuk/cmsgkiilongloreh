@@ -635,7 +635,7 @@ export default function LandingPage() {
             <div className="relative p-8 md:p-14">
               <div className="inline-flex items-center gap-3 mb-7 px-4 py-2 rounded-full"
                 style={{background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.2)'}}>
-                <Eye className="w-4 h-4" style={{color:'#D4AF37'}} />
+                <Eye className="w-4 h-4 text-[#D4AF37]" />
                 <span className="text-[11px] font-bold uppercase tracking-widest" style={{color:'#D4AF37', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Visi</span>
               </div>
               <blockquote className="font-bold leading-snug max-w-4xl" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(1.1rem,2.5vw,1.6rem)', color:'#FFF8E7'}}>

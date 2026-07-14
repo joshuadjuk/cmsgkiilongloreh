@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import ReactApexChart from "react-apexcharts";
 import { useAuth } from "../../context/AuthContext";
+import { downloadTextFile, buildUlangTahunText, buildAnniversaryText, monthYearFilename } from "../../utils/exportUlangTahun";
 
 const KEUANGAN_URL = 'https://gkiilongloreh.com/api-gkii/keuangan.php';
 const formatRupiah = (n: number) =>
@@ -285,6 +286,26 @@ export default function Home() {
   const ultahHariIni = ultahBulanIni.filter(m =>
     parseInt(m.tanggal_lahir.split('-')[2], 10) === todayDay
   );
+
+  const handleDownloadUltah = () => {
+    const currentYear = new Date().getFullYear();
+    const entries = ultahBulanIni.map((m) => ({
+      nama: m.nama_lengkap,
+      tanggal: m.tanggal_lahir,
+      ke: currentYear - parseInt(m.tanggal_lahir.split("-")[0], 10),
+    }));
+    downloadTextFile(monthYearFilename("Ulang_Tahun"), buildUlangTahunText(entries));
+  };
+
+  const handleDownloadAnniv = () => {
+    const currentYear = new Date().getFullYear();
+    const entries = annivBulanIni.map((m) => ({
+      nama: m.nama_lengkap,
+      tanggal: m.tanggal_perkawinan || "",
+      ke: currentYear - parseInt((m.tanggal_perkawinan || "").split("-")[0], 10),
+    }));
+    downloadTextFile(monthYearFilename("Hari_Jadi_Pernikahan"), buildAnniversaryText(entries));
+  };
 
   return (
     <>
@@ -585,10 +606,20 @@ export default function Home() {
         
         {/* Tabel Ulang Tahun */}
         <div className="col-span-12 xl:col-span-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
             <h4 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <span>🎂</span> Ulang Tahun Bulan Ini
             </h4>
+            <button
+              onClick={handleDownloadUltah}
+              disabled={ultahBulanIni.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download .txt
+            </button>
           </div>
           <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
             <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
@@ -628,10 +659,20 @@ export default function Home() {
 
         {/* Tabel Pernikahan */}
         <div className="col-span-12 xl:col-span-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-strokedark dark:bg-boxdark">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
             <h4 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <span>💍</span> Hari Jadi Pernikahan Bulan Ini
             </h4>
+            <button
+              onClick={handleDownloadAnniv}
+              disabled={annivBulanIni.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-pink-50 dark:bg-pink-500/10 px-3 py-1.5 text-xs font-semibold text-pink-600 dark:text-pink-400 hover:bg-pink-100 dark:hover:bg-pink-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download .txt
+            </button>
           </div>
           <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
             <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">

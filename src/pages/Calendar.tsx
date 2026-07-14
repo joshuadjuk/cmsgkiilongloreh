@@ -7,6 +7,7 @@ import { EventInput, EventClickArg } from "@fullcalendar/core";
 import { Modal } from "../components/ui/modal";
 import { useModal } from "../hooks/useModal";
 import PageMeta from "../components/common/PageMeta";
+import { downloadTextFile, buildUlangTahunText, buildAnniversaryText, monthYearFilename } from "../utils/exportUlangTahun";
 
 // Interface untuk data mentah dari API
 interface Jemaat {
@@ -143,6 +144,33 @@ const Calendar: React.FC = () => {
     openModal();
   };
 
+  // Filter event bulan berjalan (bulan sekarang, tahun berjalan sesuai proyeksi kalender)
+  const currentMonthStr = String(new Date().getMonth() + 1).padStart(2, "0");
+  const ultahBulanIni = events
+    .filter((e) => e.extendedProps.type === "Ulang Tahun" && (e.start as string).split("-")[1] === currentMonthStr)
+    .sort((a, b) => parseInt((a.start as string).split("-")[2], 10) - parseInt((b.start as string).split("-")[2], 10));
+  const annivBulanIni = events
+    .filter((e) => e.extendedProps.type === "Pernikahan" && (e.start as string).split("-")[1] === currentMonthStr)
+    .sort((a, b) => parseInt((a.start as string).split("-")[2], 10) - parseInt((b.start as string).split("-")[2], 10));
+
+  const handleDownloadUltah = () => {
+    const entries = ultahBulanIni.map((e) => ({
+      nama: e.extendedProps.memberData.nama_lengkap,
+      tanggal: e.extendedProps.originalDate,
+      ke: e.extendedProps.ageOrAnniversary,
+    }));
+    downloadTextFile(monthYearFilename("Ulang_Tahun"), buildUlangTahunText(entries));
+  };
+
+  const handleDownloadAnniv = () => {
+    const entries = annivBulanIni.map((e) => ({
+      nama: e.extendedProps.memberData.nama_lengkap,
+      tanggal: e.extendedProps.originalDate,
+      ke: e.extendedProps.ageOrAnniversary,
+    }));
+    downloadTextFile(monthYearFilename("Hari_Jadi_Pernikahan"), buildAnniversaryText(entries));
+  };
+
   return (
     <>
       <PageMeta
@@ -152,15 +180,39 @@ const Calendar: React.FC = () => {
       
       <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-boxdark shadow-sm">
         
-        {/* Keterangan Warna (Legend) */}
-        <div className="mb-4 flex gap-4 text-sm font-medium text-gray-700 dark:text-gray-300">
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-4 rounded border border-blue-500 bg-blue-100 block"></span>
-            Ulang Tahun
+        {/* Keterangan Warna (Legend) + Tombol Download Bulan Ini */}
+        <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex gap-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded border border-blue-500 bg-blue-100 block"></span>
+              Ulang Tahun
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded border border-green-500 bg-green-100 block"></span>
+              Hari Jadi Pernikahan
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-4 rounded border border-green-500 bg-green-100 block"></span>
-            Hari Jadi Pernikahan
+          <div className="flex gap-2">
+            <button
+              onClick={handleDownloadUltah}
+              disabled={ultahBulanIni.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Ulang Tahun .txt
+            </button>
+            <button
+              onClick={handleDownloadAnniv}
+              disabled={annivBulanIni.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-green-50 dark:bg-green-500/10 px-3 py-1.5 text-xs font-semibold text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Pernikahan .txt
+            </button>
           </div>
         </div>
 
