@@ -5,7 +5,7 @@ import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import { useAuth } from '../../context/AuthContext';
 import ReactApexChart from 'react-apexcharts';
 
-const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
+const KEUANGAN_URL = 'https://gkiilongloreh.com/api-gkii/keuangan.php';
 
 const formatRupiah = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);

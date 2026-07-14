@@ -5,7 +5,7 @@ import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import Label from '../../components/form/Label';
 import { useAuth } from '../../context/AuthContext';
 
-const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
+const KEUANGAN_URL = 'https://gkiilongloreh.com/api-gkii/keuangan.php';
 
 const KATEGORI_PEMASUKAN  = ['Persembahan Umum','Perpuluhan','Persembahan Pembangunan','Persembahan Diakonia','Lain-lain'];
 const KATEGORI_PENGELUARAN = ['Operasional Gereja','Honorarium/Gaji','Sosial/Diakonia','Pembangunan & Inventaris','Lain-lain'];

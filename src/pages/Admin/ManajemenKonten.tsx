@@ -3,17 +3,20 @@ import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import { useAuth } from '../../context/AuthContext';
 
-const KONTEN_URL = 'https://gereja.eternity.my.id/api-gkii/konten.php';
-const PROFIL_URL = 'https://gereja.eternity.my.id/api-gkii/profil.php';
-const HARI_LIST  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const KONTEN_URL   = 'https://gkiilongloreh.com/api-gkii/konten.php';
+const PROFIL_URL   = 'https://gkiilongloreh.com/api-gkii/profil.php';
+const PROGRAM_URL  = 'https://gkiilongloreh.com/api-gkii/program.php';
+const HARI_LIST    = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const TIPE_GEM     = ['aktif','senior','mantan'] as const;
 
 /* ── Types ─────────────────────────────────────────────────── */
 interface Jadwal     { id:number; nama:string; hari:string; jam:string; lokasi:string|null; keterangan:string|null; urutan:number; is_active:number; }
 interface Pengumuman { id:number; judul:string; isi:string; tanggal_mulai:string; tanggal_selesai:string|null; is_active:number; }
-interface BPJ        { id:number; nama:string; jabatan:string|null; foto_url:string|null; foto:string|null; periode:string|null; urutan:number; is_active:number; }
-interface Gembala    { id:number; nama:string; foto_url:string|null; foto:string|null; tahun_mulai:string; tahun_selesai:string|null; urutan:number; }
+interface BPJ        { id:number; parent_id:number|null; nama:string; jabatan:string|null; foto_url:string|null; foto:string|null; periode:string|null; urutan:number; is_active:number; }
+interface Gembala    { id:number; nama:string; tipe:string; foto_url:string|null; foto:string|null; tahun_mulai:string; tahun_selesai:string|null; urutan:number; }
+interface Program    { id:number; judul:string; deskripsi:string|null; tanggal_mulai:string; tanggal_selesai:string|null; lokasi:string|null; kategori:string|null; is_active:number; }
 
-type TabType = 'jadwal' | 'pengumuman' | 'bpj' | 'gembala';
+type TabType = 'jadwal' | 'pengumuman' | 'bpj' | 'gembala' | 'program';
 
 /* ── Reusable small components ─────────────────────────────── */
 const IcoPlus   = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>;
@@ -105,7 +108,7 @@ export default function ManajemenKonten() {
   const [bpjList,    setBpjList]    = useState<BPJ[]>([]);
   const [bpjLoading, setBpjLoading] = useState(true);
   const [bpjModal,   setBpjModal]   = useState<'add'|'edit'|null>(null);
-  const [bpjForm,    setBpjForm]    = useState({ nama:'', jabatan:'', periode:'', urutan:0, is_active:1 });
+  const [bpjForm,    setBpjForm]    = useState({ parent_id:'', nama:'', jabatan:'', periode:'', urutan:0, is_active:1 });
   const [bpjEditId,  setBpjEditId]  = useState<number|null>(null);
   const [bpjError,   setBpjError]   = useState('');
   const [bpjSaving,  setBpjSaving]  = useState(false);
@@ -118,7 +121,7 @@ export default function ManajemenKonten() {
   const [gemList,    setGemList]    = useState<Gembala[]>([]);
   const [gemLoading, setGemLoading] = useState(true);
   const [gemModal,   setGemModal]   = useState<'add'|'edit'|null>(null);
-  const [gemForm,    setGemForm]    = useState({ nama:'', tahun_mulai:'', tahun_selesai:'', urutan:0 });
+  const [gemForm,    setGemForm]    = useState({ nama:'', tipe:'aktif', tahun_mulai:'', tahun_selesai:'', urutan:0 });
   const [gemEditId,  setGemEditId]  = useState<number|null>(null);
   const [gemError,   setGemError]   = useState('');
   const [gemSaving,  setGemSaving]  = useState(false);
@@ -126,6 +129,15 @@ export default function ManajemenKonten() {
   const [gemNewFile,     setGemNewFile]     = useState<File|null>(null);
   const [gemPreview,     setGemPreview]     = useState<string|null>(null);
   const [gemHapusFoto,   setGemHapusFoto]   = useState(false);
+
+  /* ── Program ──────────────────────────────────────────── */
+  const [progList,    setProgList]    = useState<Program[]>([]);
+  const [progLoading, setProgLoading] = useState(true);
+  const [progModal,   setProgModal]   = useState<'add'|'edit'|null>(null);
+  const [progForm,    setProgForm]    = useState({ judul:'', deskripsi:'', tanggal_mulai: new Date().toISOString().split('T')[0], tanggal_selesai:'', lokasi:'', kategori:'', is_active:1 });
+  const [progEditId,  setProgEditId]  = useState<number|null>(null);
+  const [progError,   setProgError]   = useState('');
+  const [progSaving,  setProgSaving]  = useState(false);
 
   /* ── Fetch ──────────────────────────────────────────────── */
   const fetchJadwal = async () => {
@@ -156,8 +168,15 @@ export default function ManajemenKonten() {
     if (d.status === 'success') setGemList(d.data);
     setGemLoading(false);
   };
+  const fetchProg = async () => {
+    setProgLoading(true);
+    const res = await fetch(PROGRAM_URL, { headers: authHeader });
+    const d = await res.json();
+    if (d.status === 'success') setProgList(d.data);
+    setProgLoading(false);
+  };
 
-  useEffect(() => { fetchJadwal(); fetchPeng(); fetchBpj(); fetchGem(); }, []);
+  useEffect(() => { fetchJadwal(); fetchPeng(); fetchBpj(); fetchGem(); fetchProg(); }, []);
 
   /* ── Jadwal CRUD ────────────────────────────────────────── */
   const openJadwalAdd = () => { setJadwalForm({ nama:'', hari:'Minggu', jam:'', lokasi:'', keterangan:'', urutan:0, is_active:1 }); setJadwalEditId(null); setJadwalError(''); setJadwalModal('add'); };
@@ -205,13 +224,13 @@ export default function ManajemenKonten() {
 
   /* ── BPJ CRUD ───────────────────────────────────────────── */
   const openBpjAdd = () => {
-    setBpjForm({ nama:'', jabatan:'', periode:'', urutan:0, is_active:1 });
+    setBpjForm({ parent_id:'', nama:'', jabatan:'', periode:'', urutan:0, is_active:1 });
     setBpjEditId(null); setBpjError('');
     setBpjCurrentFoto(null); setBpjNewFile(null); setBpjPreview(null); setBpjHapusFoto(false);
     setBpjModal('add');
   };
   const openBpjEdit = (b:BPJ) => {
-    setBpjForm({ nama:b.nama, jabatan:b.jabatan??'', periode:b.periode??'', urutan:b.urutan, is_active:b.is_active });
+    setBpjForm({ parent_id: b.parent_id != null ? String(b.parent_id) : '', nama:b.nama, jabatan:b.jabatan??'', periode:b.periode??'', urutan:b.urutan, is_active:b.is_active });
     setBpjEditId(b.id); setBpjError('');
     setBpjCurrentFoto(b.foto_url); setBpjNewFile(null); setBpjPreview(null); setBpjHapusFoto(false);
     setBpjModal('edit');
@@ -235,6 +254,7 @@ export default function ManajemenKonten() {
       fd.append('periode',   bpjForm.periode);
       fd.append('urutan',    String(bpjForm.urutan));
       fd.append('is_active', String(bpjForm.is_active));
+      if (bpjForm.parent_id) fd.append('parent_id', bpjForm.parent_id);
       if (bpjNewFile)   fd.append('foto', bpjNewFile);
       if (bpjHapusFoto) fd.append('hapus_foto', '1');
 
@@ -257,13 +277,13 @@ export default function ManajemenKonten() {
 
   /* ── Gembala CRUD ───────────────────────────────────────── */
   const openGemAdd = () => {
-    setGemForm({ nama:'', tahun_mulai:'', tahun_selesai:'', urutan:0 });
+    setGemForm({ nama:'', tipe:'aktif', tahun_mulai:'', tahun_selesai:'', urutan:0 });
     setGemEditId(null); setGemError('');
     setGemCurrentFoto(null); setGemNewFile(null); setGemPreview(null); setGemHapusFoto(false);
     setGemModal('add');
   };
   const openGemEdit = (g:Gembala) => {
-    setGemForm({ nama:g.nama, tahun_mulai:g.tahun_mulai, tahun_selesai:g.tahun_selesai??'', urutan:g.urutan });
+    setGemForm({ nama:g.nama, tipe:g.tipe||'aktif', tahun_mulai:g.tahun_mulai, tahun_selesai:g.tahun_selesai??'', urutan:g.urutan });
     setGemEditId(g.id); setGemError('');
     setGemCurrentFoto(g.foto_url); setGemNewFile(null); setGemPreview(null); setGemHapusFoto(false);
     setGemModal('edit');
@@ -281,6 +301,7 @@ export default function ManajemenKonten() {
     try {
       const fd = new FormData();
       fd.append('nama',          gemForm.nama);
+      fd.append('tipe',          gemForm.tipe);
       fd.append('tahun_mulai',   gemForm.tahun_mulai);
       fd.append('tahun_selesai', gemForm.tahun_selesai);
       fd.append('urutan',        String(gemForm.urutan));
@@ -304,6 +325,28 @@ export default function ManajemenKonten() {
     if (d.status==='success') fetchGem(); else alert(d.message);
   };
 
+  /* ── Program CRUD ──────────────────────────────────────── */
+  const openProgAdd = () => { setProgForm({ judul:'', deskripsi:'', tanggal_mulai: new Date().toISOString().split('T')[0], tanggal_selesai:'', lokasi:'', kategori:'', is_active:1 }); setProgEditId(null); setProgError(''); setProgModal('add'); };
+  const openProgEdit = (p:Program) => { setProgForm({ judul:p.judul, deskripsi:p.deskripsi??'', tanggal_mulai:p.tanggal_mulai, tanggal_selesai:p.tanggal_selesai??'', lokasi:p.lokasi??'', kategori:p.kategori??'', is_active:p.is_active }); setProgEditId(p.id); setProgError(''); setProgModal('edit'); };
+  const handleProgSubmit = async (e:FormEvent) => {
+    e.preventDefault(); setProgError(''); setProgSaving(true);
+    try {
+      const body = { ...progForm, deskripsi: progForm.deskripsi||null, tanggal_selesai: progForm.tanggal_selesai||null, lokasi: progForm.lokasi||null, kategori: progForm.kategori||null };
+      const url  = progModal==='edit' ? `${PROGRAM_URL}?id=${progEditId}` : PROGRAM_URL;
+      const res  = await fetch(url, { method:'POST', headers: jsonHeaders, body: JSON.stringify(body) });
+      const d = await res.json();
+      if (!res.ok || d.status!=='success') throw new Error(d.message);
+      setProgModal(null); fetchProg();
+    } catch(err) { setProgError(err instanceof Error ? err.message : 'Gagal menyimpan.'); }
+    finally { setProgSaving(false); }
+  };
+  const handleProgDelete = async (id:number) => {
+    if (!confirm('Hapus program ini?')) return;
+    const res = await fetch(`${PROGRAM_URL}?id=${id}`, { method:'DELETE', headers: authHeader });
+    const d = await res.json();
+    if (d.status==='success') fetchProg(); else alert(d.message);
+  };
+
   /* ── Reusable style strings ─────────────────────────────── */
   const inputCls = "h-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500";
   const btnEdit  = "rounded-lg p-1.5 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors";
@@ -312,6 +355,7 @@ export default function ManajemenKonten() {
   const TABS: { key:TabType; label:string }[] = [
     { key:'jadwal',      label:'Jadwal Ibadah'  },
     { key:'pengumuman',  label:'Pengumuman'     },
+    { key:'program',     label:'Program'        },
     { key:'bpj',         label:'BPJ Periode'    },
     { key:'gembala',     label:'Gembala Jemaat' },
   ];
@@ -506,6 +550,7 @@ export default function ManajemenKonten() {
                 <tr>
                   <th className="px-6 py-3 text-left font-semibold">Foto</th>
                   <th className="px-6 py-3 text-left font-semibold">Nama</th>
+                  <th className="px-6 py-3 text-left font-semibold">Tipe</th>
                   <th className="px-6 py-3 text-left font-semibold">Tahun Mulai</th>
                   <th className="px-6 py-3 text-left font-semibold">Tahun Selesai</th>
                   <th className="px-6 py-3 text-center font-semibold">Aksi</th>
@@ -513,9 +558,9 @@ export default function ManajemenKonten() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {gemLoading ? (
-                  <tr><td colSpan={5} className="py-10 text-center text-gray-400">Memuat...</td></tr>
+                  <tr><td colSpan={6} className="py-10 text-center text-gray-400">Memuat...</td></tr>
                 ) : gemList.length === 0 ? (
-                  <tr><td colSpan={5} className="py-10 text-center text-gray-400">Belum ada data gembala.</td></tr>
+                  <tr><td colSpan={6} className="py-10 text-center text-gray-400">Belum ada data gembala.</td></tr>
                 ) : gemList.map(g => (
                   <tr key={g.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="px-6 py-3">
@@ -528,13 +573,20 @@ export default function ManajemenKonten() {
                       )}
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{g.nama}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-block text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full ${
+                        g.tipe==='aktif' ? 'bg-green-50 text-green-700 border border-green-200' :
+                        g.tipe==='senior' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                        'bg-gray-100 text-gray-500 border border-gray-200'
+                      }`}>{g.tipe}</span>
+                    </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{g.tahun_mulai}</td>
                     <td className="px-6 py-4">
                       {g.tahun_selesai ? (
                         <span className="text-gray-600 dark:text-gray-300">{g.tahun_selesai}</span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Aktif
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Sekarang
                         </span>
                       )}
                     </td>
@@ -675,6 +727,15 @@ export default function ManajemenKonten() {
                     className={inputCls} />
                 </div>
               ))}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Atasan (untuk struktur tree)</label>
+                <select value={bpjForm.parent_id} onChange={e=>setBpjForm(f=>({...f,parent_id:e.target.value}))} className={inputCls}>
+                  <option value="">— Tidak ada (level utama) —</option>
+                  {bpjList.filter(b => bpjEditId ? b.id !== bpjEditId : true).map(b => (
+                    <option key={b.id} value={b.id}>{b.nama}{b.jabatan ? ` (${b.jabatan})` : ''}</option>
+                  ))}
+                </select>
+              </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="bpj-aktif" checked={bpjForm.is_active===1} onChange={e=>setBpjForm(f=>({...f,is_active:e.target.checked?1:0}))} className="w-4 h-4 accent-brand-500" />
                 <label htmlFor="bpj-aktif" className="text-sm text-gray-700 dark:text-gray-300">Tampilkan di halaman publik</label>
@@ -682,6 +743,113 @@ export default function ManajemenKonten() {
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setBpjModal(null)} className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
                 <button type="submit" disabled={bpjSaving} className="flex-1 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-sm font-semibold text-white">{bpjSaving?'Menyimpan...':'Simpan'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════ PROGRAM TAB ════════════════ */}
+      {tab === 'program' && (
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white">Program Kegiatan</h4>
+            <button onClick={openProgAdd} className="inline-flex items-center gap-2 rounded-lg bg-brand-500 hover:bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors">
+              <IcoPlus /> Tambah
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Judul</th>
+                  <th className="px-6 py-3 text-left font-semibold">Kategori</th>
+                  <th className="px-6 py-3 text-left font-semibold">Tanggal</th>
+                  <th className="px-6 py-3 text-left font-semibold">Lokasi</th>
+                  <th className="px-6 py-3 text-center font-semibold">Status</th>
+                  <th className="px-6 py-3 text-center font-semibold">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {progLoading ? (
+                  <tr><td colSpan={6} className="py-10 text-center text-gray-400">Memuat...</td></tr>
+                ) : progList.length === 0 ? (
+                  <tr><td colSpan={6} className="py-10 text-center text-gray-400">Belum ada program kegiatan.</td></tr>
+                ) : progList.map(p => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white max-w-xs">
+                      <p className="truncate">{p.judul}</p>
+                      {p.deskripsi && <p className="text-xs text-gray-400 truncate mt-0.5">{p.deskripsi}</p>}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{p.kategori ?? '-'}</td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {p.tanggal_mulai}{p.tanggal_selesai ? ` s.d. ${p.tanggal_selesai}` : ''}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{p.lokasi ?? '-'}</td>
+                    <td className="px-6 py-4 text-center"><StatusBadge active={p.is_active} /></td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => openProgEdit(p)} className={btnEdit}><IcoEdit /></button>
+                        <button onClick={() => handleProgDelete(p.id)} className={btnDel}><IcoTrash /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════
+          MODAL — Program
+      ════════════════════════════════════════════ */}
+      {progModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{progModal==='add'?'Tambah Program':'Edit Program'}</h3>
+              <button onClick={() => setProgModal(null)} className="text-gray-400 hover:text-gray-600"><IcoClose /></button>
+            </div>
+            {progError && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-600">{progError}</div>}
+            <form onSubmit={handleProgSubmit} className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Judul *</label>
+                <input type="text" value={progForm.judul} onChange={e=>setProgForm(f=>({...f,judul:e.target.value}))} required className={inputCls} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Kategori</label>
+                  <input type="text" value={progForm.kategori} onChange={e=>setProgForm(f=>({...f,kategori:e.target.value}))}
+                    placeholder="misal: Retreat, KKR..." className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Lokasi</label>
+                  <input type="text" value={progForm.lokasi} onChange={e=>setProgForm(f=>({...f,lokasi:e.target.value}))} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Deskripsi</label>
+                <textarea value={progForm.deskripsi} onChange={e=>setProgForm(f=>({...f,deskripsi:e.target.value}))} rows={3}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Tanggal Mulai *</label>
+                  <input type="date" value={progForm.tanggal_mulai} onChange={e=>setProgForm(f=>({...f,tanggal_mulai:e.target.value}))} required className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Tanggal Selesai</label>
+                  <input type="date" value={progForm.tanggal_selesai} onChange={e=>setProgForm(f=>({...f,tanggal_selesai:e.target.value}))} className={inputCls} />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="prog-aktif" checked={progForm.is_active===1} onChange={e=>setProgForm(f=>({...f,is_active:e.target.checked?1:0}))} className="w-4 h-4 accent-brand-500" />
+                <label htmlFor="prog-aktif" className="text-sm text-gray-700 dark:text-gray-300">Tampilkan di halaman publik</label>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setProgModal(null)} className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                <button type="submit" disabled={progSaving} className="flex-1 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-sm font-semibold text-white">{progSaving?'Menyimpan...':'Simpan'}</button>
               </div>
             </form>
           </div>
@@ -715,6 +883,12 @@ export default function ManajemenKonten() {
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Nama *</label>
                 <input type="text" value={gemForm.nama} onChange={e=>setGemForm(f=>({...f,nama:e.target.value}))} required className={inputCls} />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Tipe *</label>
+                <select value={gemForm.tipe} onChange={e=>setGemForm(f=>({...f,tipe:e.target.value}))} className={inputCls}>
+                  {TIPE_GEM.map(t => <option key={t} value={t}>{t === 'aktif' ? 'Aktif (Gembala Aktif)' : t === 'senior' ? 'Senior (Senior Pastor)' : 'Mantan (Sudah Selesai)'}</option>)}
+                </select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Tahun Mulai *</label>
@@ -727,7 +901,7 @@ export default function ManajemenKonten() {
                     placeholder="kosong = masih aktif" maxLength={4} className={inputCls} />
                 </div>
               </div>
-              <p className="text-xs text-gray-400 -mt-2">Kosongkan "Tahun Selesai" jika gembala masih aktif melayani.</p>
+              <p className="text-xs text-gray-400 -mt-2">Kosongkan "Tahun Selesai" jika masih melayani.</p>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setGemModal(null)} className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
                 <button type="submit" disabled={gemSaving} className="flex-1 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-sm font-semibold text-white">{gemSaving?'Menyimpan...':'Simpan'}</button>

@@ -10,7 +10,7 @@ require_once 'config/jwt.php';
 $authUser = requireAuth(['bendahara', 'admin']);
 
 define('UPLOAD_DIR', __DIR__ . '/uploads/bukti/');
-define('UPLOAD_URL', 'https://gereja.eternity.my.id/api-gkii/uploads/bukti/');
+define('UPLOAD_URL', 'https://gkiilongloreh.com/api-gkii/uploads/bukti/');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';

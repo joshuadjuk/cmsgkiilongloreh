@@ -3,7 +3,7 @@ import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import { useAuth } from '../../context/AuthContext';
 
-const USERS_URL = 'https://gereja.eternity.my.id/api-gkii/users.php';
+const USERS_URL = 'https://gkiilongloreh.com/api-gkii/users.php';
 
 type UserRole = 'admin' | 'sekretaris' | 'bendahara';
 

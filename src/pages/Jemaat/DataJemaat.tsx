@@ -33,7 +33,7 @@ const DataJemaat: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10; // Jumlah data per halaman
 
-  const API_URL = 'https://gereja.eternity.my.id/api-gkii/jemaat.php';
+  const API_URL = 'https://gkiilongloreh.com/api-gkii/jemaat.php';
 
   useEffect(() => {
     fetchMembers();

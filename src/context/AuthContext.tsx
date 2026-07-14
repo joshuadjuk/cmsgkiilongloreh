@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 
-const AUTH_URL = 'https://gereja.eternity.my.id/api-gkii/auth.php';
+const AUTH_URL = 'https://gkiilongloreh.com/api-gkii/auth.php';
 
 export type UserRole = 'admin' | 'bendahara' | 'sekretaris';
 

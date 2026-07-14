@@ -4,7 +4,7 @@ import PageMeta from "../../components/common/PageMeta";
 import ReactApexChart from "react-apexcharts";
 import { useAuth } from "../../context/AuthContext";
 
-const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
+const KEUANGAN_URL = 'https://gkiilongloreh.com/api-gkii/keuangan.php';
 const formatRupiah = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
@@ -95,7 +95,7 @@ export default function Home() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch("https://gereja.eternity.my.id/api-gkii/jemaat.php");
+      const response = await fetch("https://gkiilongloreh.com/api-gkii/jemaat.php");
       const result = await response.json();
 
       if (result.status === "success") {

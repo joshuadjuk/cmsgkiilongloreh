@@ -12,7 +12,7 @@ require_once __DIR__ . '/config/jwt.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
-$PHOTO_BASE = 'https://gereja.eternity.my.id/api-gkii/uploads/galeri/';
+$PHOTO_BASE = 'https://gkiilongloreh.com/api-gkii/uploads/galeri/';
 $UPLOAD_DIR = __DIR__ . '/uploads/galeri/';
 
 if (!is_dir($UPLOAD_DIR)) { mkdir($UPLOAD_DIR, 0755, true); }

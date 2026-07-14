@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
 
-const AUTH_URL = 'https://gereja.eternity.my.id/api-gkii/auth.php';
+const AUTH_URL = 'https://gkiilongloreh.com/api-gkii/auth.php';
 
 const roleLabel: Record<string, string> = {
   admin:       'Admin',

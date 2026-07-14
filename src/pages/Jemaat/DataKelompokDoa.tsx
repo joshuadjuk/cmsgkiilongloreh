@@ -38,7 +38,7 @@ const DataKelompokDoa: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
-  const API_URL = 'https://gereja.eternity.my.id/api-gkii/jemaat.php';
+  const API_URL = 'https://gkiilongloreh.com/api-gkii/jemaat.php';
 
   // Fetch ulang setiap kali URL kelompok berubah (user klik menu sidebar lain)
   useEffect(() => {

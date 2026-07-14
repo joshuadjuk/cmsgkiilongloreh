@@ -30,7 +30,7 @@ const TambahJemaat: React.FC = () => {
   useEffect(() => {
     const fetchExistingKK = async () => {
       try {
-        const response = await fetch('https://gereja.eternity.my.id/api-gkii/jemaat.php');
+        const response = await fetch('https://gkiilongloreh.com/api-gkii/jemaat.php');
         const result = await response.json();
         
         if (result.status === 'success') {
@@ -62,7 +62,7 @@ const TambahJemaat: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://gereja.eternity.my.id/api-gkii/jemaat.php', {
+      const response = await fetch('https://gkiilongloreh.com/api-gkii/jemaat.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

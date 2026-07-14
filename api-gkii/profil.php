@@ -13,7 +13,7 @@ $method     = $_SERVER['REQUEST_METHOD'];
 $resource   = $_GET['resource'] ?? null;
 $id         = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
-$PHOTO_BASE = 'https://gereja.eternity.my.id/api-gkii/uploads/profil/';
+$PHOTO_BASE = 'https://gkiilongloreh.com/api-gkii/uploads/profil/';
 $UPLOAD_DIR = __DIR__ . '/uploads/profil/';
 
 if (!is_dir($UPLOAD_DIR)) { mkdir($UPLOAD_DIR, 0755, true); }
@@ -24,11 +24,11 @@ if (!is_dir($UPLOAD_DIR)) { mkdir($UPLOAD_DIR, 0755, true); }
 if ($method === 'GET' && !$resource) {
     try {
         $bpj = $db->query(
-            "SELECT id, nama, jabatan, foto, periode FROM bpj_periode WHERE is_active=1 ORDER BY urutan, id"
+            "SELECT id, parent_id, nama, jabatan, foto, periode FROM bpj_periode WHERE is_active=1 ORDER BY urutan, id"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $gembala = $db->query(
-            "SELECT id, nama, foto, tahun_mulai, tahun_selesai FROM gembala_jemaat ORDER BY tahun_mulai DESC"
+            "SELECT id, nama, tipe, foto, tahun_mulai, tahun_selesai FROM gembala_jemaat ORDER BY FIELD(tipe,'aktif','senior','mantan'), tahun_mulai DESC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($bpj    as &$b) { $b['foto_url'] = $b['foto'] ? $PHOTO_BASE.$b['foto'] : null; unset($b['foto']); }
@@ -74,22 +74,23 @@ try {
     if ($resource === 'bpj') {
 
         if ($method === 'GET') {
-            $rows = $db->query("SELECT id, nama, jabatan, foto, periode, urutan, is_active FROM bpj_periode ORDER BY urutan, id")->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $db->query("SELECT id, parent_id, nama, jabatan, foto, periode, urutan, is_active FROM bpj_periode ORDER BY urutan, id")->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$r) { $r['foto_url'] = $r['foto'] ? $PHOTO_BASE.$r['foto'] : null; }
             echo json_encode(['status'=>'success','data'=>$rows]);
         }
 
         elseif ($method === 'POST' && !$id) {
             // CREATE
-            $nama    = trim($_POST['nama']    ?? '');
-            $jabatan = trim($_POST['jabatan'] ?? '');
-            $periode = trim($_POST['periode'] ?? '');
-            $urutan  = (int)($_POST['urutan'] ?? 0);
-            $aktif   = (int)($_POST['is_active'] ?? 1);
+            $nama     = trim($_POST['nama']      ?? '');
+            $jabatan  = trim($_POST['jabatan']   ?? '');
+            $periode  = trim($_POST['periode']   ?? '');
+            $urutan   = (int)($_POST['urutan']   ?? 0);
+            $aktif    = (int)($_POST['is_active'] ?? 1);
+            $parentId = ($_POST['parent_id'] ?? '') !== '' ? (int)$_POST['parent_id'] : null;
             if (!$nama) throw new Exception("Nama wajib diisi.");
             $foto = uploadPhoto('foto', $UPLOAD_DIR);
-            $db->prepare("INSERT INTO bpj_periode (nama,jabatan,foto,periode,urutan,is_active,dibuat_oleh) VALUES(?,?,?,?,?,?,?)")
-                ->execute([$nama, $jabatan ?: null, $foto, $periode ?: null, $urutan, $aktif, $user['sub']]);
+            $db->prepare("INSERT INTO bpj_periode (parent_id,nama,jabatan,foto,periode,urutan,is_active,dibuat_oleh) VALUES(?,?,?,?,?,?,?,?)")
+                ->execute([$parentId, $nama, $jabatan ?: null, $foto, $periode ?: null, $urutan, $aktif, $user['sub']]);
             echo json_encode(['status'=>'success','message'=>'BPJ berhasil ditambahkan.']);
         }
 
@@ -100,11 +101,12 @@ try {
             $old = $existing->fetch(PDO::FETCH_ASSOC);
             if (!$old) throw new Exception("Data tidak ditemukan.");
 
-            $nama      = trim($_POST['nama']    ?? '');
-            $jabatan   = trim($_POST['jabatan'] ?? '');
-            $periode   = trim($_POST['periode'] ?? '');
-            $urutan    = (int)($_POST['urutan'] ?? 0);
+            $nama      = trim($_POST['nama']      ?? '');
+            $jabatan   = trim($_POST['jabatan']   ?? '');
+            $periode   = trim($_POST['periode']   ?? '');
+            $urutan    = (int)($_POST['urutan']   ?? 0);
             $aktif     = (int)($_POST['is_active'] ?? 1);
+            $parentId  = ($_POST['parent_id'] ?? '') !== '' ? (int)$_POST['parent_id'] : null;
             $hapusFoto = ($_POST['hapus_foto'] ?? '') === '1';
             if (!$nama) throw new Exception("Nama wajib diisi.");
 
@@ -113,8 +115,8 @@ try {
             if ($newFoto) { deletePhoto($fotoName, $UPLOAD_DIR); $fotoName = $newFoto; }
             elseif ($hapusFoto) { deletePhoto($fotoName, $UPLOAD_DIR); $fotoName = null; }
 
-            $db->prepare("UPDATE bpj_periode SET nama=?,jabatan=?,foto=?,periode=?,urutan=?,is_active=? WHERE id=?")
-                ->execute([$nama, $jabatan ?: null, $fotoName, $periode ?: null, $urutan, $aktif, $id]);
+            $db->prepare("UPDATE bpj_periode SET parent_id=?,nama=?,jabatan=?,foto=?,periode=?,urutan=?,is_active=? WHERE id=?")
+                ->execute([$parentId, $nama, $jabatan ?: null, $fotoName, $periode ?: null, $urutan, $aktif, $id]);
             echo json_encode(['status'=>'success','message'=>'BPJ berhasil diperbarui.']);
         }
 
@@ -132,22 +134,24 @@ try {
     elseif ($resource === 'gembala') {
 
         if ($method === 'GET') {
-            $rows = $db->query("SELECT id, nama, foto, tahun_mulai, tahun_selesai, urutan FROM gembala_jemaat ORDER BY tahun_mulai DESC")->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $db->query("SELECT id, nama, tipe, foto, tahun_mulai, tahun_selesai, urutan FROM gembala_jemaat ORDER BY FIELD(tipe,'aktif','senior','mantan'), urutan, id")->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$r) { $r['foto_url'] = $r['foto'] ? $PHOTO_BASE.$r['foto'] : null; }
             echo json_encode(['status'=>'success','data'=>$rows]);
         }
 
         elseif ($method === 'POST' && !$id) {
             // CREATE
-            $nama    = trim($_POST['nama'] ?? '');
-            $tMulai  = trim($_POST['tahun_mulai'] ?? '');
-            $tSeles  = trim($_POST['tahun_selesai'] ?? '');
-            $urutan  = (int)($_POST['urutan'] ?? 0);
+            $nama   = trim($_POST['nama']         ?? '');
+            $tipe   = trim($_POST['tipe']          ?? 'aktif');
+            $tMulai = trim($_POST['tahun_mulai']   ?? '');
+            $tSeles = trim($_POST['tahun_selesai'] ?? '');
+            $urutan = (int)($_POST['urutan']       ?? 0);
             if (!$nama)   throw new Exception("Nama wajib diisi.");
             if (!$tMulai) throw new Exception("Tahun mulai wajib diisi.");
+            if (!in_array($tipe, ['aktif','senior','mantan'])) $tipe = 'aktif';
             $foto = uploadPhoto('foto', $UPLOAD_DIR);
-            $db->prepare("INSERT INTO gembala_jemaat (nama,foto,tahun_mulai,tahun_selesai,urutan) VALUES(?,?,?,?,?)")
-                ->execute([$nama, $foto, $tMulai, $tSeles ?: null, $urutan]);
+            $db->prepare("INSERT INTO gembala_jemaat (nama,tipe,foto,tahun_mulai,tahun_selesai,urutan) VALUES(?,?,?,?,?,?)")
+                ->execute([$nama, $tipe, $foto, $tMulai, $tSeles ?: null, $urutan]);
             echo json_encode(['status'=>'success','message'=>'Gembala berhasil ditambahkan.']);
         }
 
@@ -158,21 +162,23 @@ try {
             $old = $existing->fetch(PDO::FETCH_ASSOC);
             if (!$old) throw new Exception("Data tidak ditemukan.");
 
-            $nama      = trim($_POST['nama'] ?? '');
-            $tMulai    = trim($_POST['tahun_mulai'] ?? '');
+            $nama      = trim($_POST['nama']         ?? '');
+            $tipe      = trim($_POST['tipe']          ?? 'aktif');
+            $tMulai    = trim($_POST['tahun_mulai']   ?? '');
             $tSeles    = trim($_POST['tahun_selesai'] ?? '');
-            $urutan    = (int)($_POST['urutan'] ?? 0);
-            $hapusFoto = ($_POST['hapus_foto'] ?? '') === '1';
+            $urutan    = (int)($_POST['urutan']       ?? 0);
+            $hapusFoto = ($_POST['hapus_foto']        ?? '') === '1';
             if (!$nama)   throw new Exception("Nama wajib diisi.");
             if (!$tMulai) throw new Exception("Tahun mulai wajib diisi.");
+            if (!in_array($tipe, ['aktif','senior','mantan'])) $tipe = 'aktif';
 
             $fotoName = $old['foto'];
             $newFoto  = uploadPhoto('foto', $UPLOAD_DIR);
             if ($newFoto) { deletePhoto($fotoName, $UPLOAD_DIR); $fotoName = $newFoto; }
             elseif ($hapusFoto) { deletePhoto($fotoName, $UPLOAD_DIR); $fotoName = null; }
 
-            $db->prepare("UPDATE gembala_jemaat SET nama=?,foto=?,tahun_mulai=?,tahun_selesai=?,urutan=? WHERE id=?")
-                ->execute([$nama, $fotoName, $tMulai, $tSeles ?: null, $urutan, $id]);
+            $db->prepare("UPDATE gembala_jemaat SET nama=?,tipe=?,foto=?,tahun_mulai=?,tahun_selesai=?,urutan=? WHERE id=?")
+                ->execute([$nama, $tipe, $fotoName, $tMulai, $tSeles ?: null, $urutan, $id]);
             echo json_encode(['status'=>'success','message'=>'Gembala berhasil diperbarui.']);
         }
 

@@ -2,59 +2,125 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import DomeGallery from '../components/DomeGallery';
 
-const LANDING_URL = 'https://gereja.eternity.my.id/api-gkii/landing.php';
-const PROFIL_URL  = 'https://gereja.eternity.my.id/api-gkii/profil.php';
-const GALERI_URL  = 'https://gereja.eternity.my.id/api-gkii/galeri.php';
+// ── Inline SVG icon components ──────────────────────────────────────────────
+const Calendar     = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>;
+const CalendarDays = ({ className='w-10 h-10' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5" /></svg>;
+const MapPin       = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>;
+const LogIn        = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>;
+const ChevronDown  = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>;
+const ChevronUp    = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>;
+const ChevronLeft  = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>;
+const ChevronRight = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>;
+const Megaphone    = ({ className='w-8 h-8' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 1 8.835-2.535m0 0A23.74 23.74 0 0 1 18.795 3c1.167 0 2.315.09 3.438.266m-3.438-.266 2.912 16.494" /></svg>;
+const ImageIcon    = ({ className='w-16 h-16' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>;
+const Star         = ({ className='w-6 h-6' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>;
+const Heart        = ({ className='w-6 h-6' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>;
+const Users        = ({ className='w-6 h-6' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>;
+const Eye          = ({ className='w-4 h-4' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>;
+const Clock        = ({ className='w-3.5 h-3.5' }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>;
+
+const LANDING_URL  = 'https://gkiilongloreh.com/api-gkii/landing.php';
+const PROFIL_URL   = 'https://gkiilongloreh.com/api-gkii/profil.php';
+const GALERI_URL   = 'https://gkiilongloreh.com/api-gkii/galeri.php';
+const PROGRAM_URL  = 'https://gkiilongloreh.com/api-gkii/program.php';
 const HARI_ORDER  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
 interface Jadwal    { id:number; nama:string; hari:string; jam:string; lokasi:string|null; keterangan:string|null; }
 interface Pengumuman{ id:number; judul:string; isi:string; tanggal_mulai:string; tanggal_selesai:string|null; }
-interface Stats     { total:number; sekolah_minggu:number; remaja:number; pemuda:number; perkauan:number; perkaria:number; lansia:number; }
+interface Stats     {
+  total:number; total_laki:number; total_perempuan:number;
+  sekolah_minggu:number; sm_laki:number; sm_perempuan:number;
+  remaja:number; remaja_laki:number; remaja_perempuan:number;
+  pemuda:number; pemuda_laki:number; pemuda_perempuan:number;
+  perkauan:number; perkaria:number;
+  lansia:number; lansia_laki:number; lansia_perempuan:number;
+}
+interface Program   { id:number; judul:string; deskripsi:string|null; tanggal_mulai:string; tanggal_selesai:string|null; lokasi:string|null; kategori:string|null; }
 interface GaleriItem{ id:number; judul:string|null; foto_url:string; }
-interface BPJ       { id:number; nama:string; jabatan:string|null; foto_url:string|null; periode:string|null; }
-interface Gembala   { id:number; nama:string; foto_url:string|null; tahun_mulai:string; tahun_selesai:string|null; }
+interface BPJ       { id:number; parent_id:number|null; nama:string; jabatan:string|null; foto_url:string|null; periode:string|null; }
+interface Gembala   { id:number; nama:string; tipe:'aktif'|'senior'|'mantan'; foto_url:string|null; tahun_mulai:string; tahun_selesai:string|null; }
 
 const HARI_ACCENT: Record<string,string> = {
-  Minggu:'border-blue-500 bg-blue-50 text-blue-700', Senin:'border-emerald-500 bg-emerald-50 text-emerald-700',
-  Selasa:'border-violet-500 bg-violet-50 text-violet-700', Rabu:'border-orange-500 bg-orange-50 text-orange-700',
-  Kamis:'border-teal-500 bg-teal-50 text-teal-700', Jumat:'border-rose-500 bg-rose-50 text-rose-700',
-  Sabtu:'border-amber-500 bg-amber-50 text-amber-700',
+  Minggu:'border-[#C9A84C]/30 bg-[#C9A84C]/10 text-[#D4AF37]',
+  Senin:'border-emerald-400/30 bg-emerald-500/10 text-emerald-300',
+  Selasa:'border-violet-400/30 bg-violet-500/10 text-violet-300',
+  Rabu:'border-orange-400/30 bg-orange-500/10 text-orange-300',
+  Kamis:'border-teal-400/30 bg-teal-500/10 text-teal-300',
+  Jumat:'border-rose-400/30 bg-rose-500/10 text-rose-300',
+  Sabtu:'border-amber-400/30 bg-amber-500/10 text-amber-300',
 };
-const HARI_LEFT: Record<string,string> = {
-  Minggu:'bg-blue-500', Senin:'bg-emerald-500', Selasa:'bg-violet-500',
-  Rabu:'bg-orange-500', Kamis:'bg-teal-500', Jumat:'bg-rose-500', Sabtu:'bg-amber-500',
+const HARI_COLOR: Record<string,string> = {
+  Minggu:'text-[#D4AF37]', Senin:'text-emerald-400', Selasa:'text-violet-400',
+  Rabu:'text-orange-400', Kamis:'text-teal-400', Jumat:'text-rose-400', Sabtu:'text-amber-400',
 };
 const AVATAR_COLORS = [
-  'from-blue-400 to-blue-600','from-emerald-400 to-emerald-600','from-violet-400 to-violet-600',
-  'from-rose-400 to-rose-600','from-amber-400 to-amber-600','from-teal-400 to-teal-600',
+  'from-[#C9A84C] to-[#92400e]','from-emerald-500 to-emerald-700','from-violet-500 to-violet-700',
+  'from-rose-500 to-rose-700','from-amber-500 to-amber-700','from-teal-500 to-teal-700',
 ];
 function avatarColor(name:string) { return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]; }
+function buildTree(items: BPJ[]): BPJ[] { return items.filter(i => !i.parent_id); }
+function childrenOf(items: BPJ[], parentId: number): BPJ[] { return items.filter(i => i.parent_id === parentId); }
+
+function BpjCard({ b, large, small }: { b: BPJ; large?: boolean; small?: boolean }) {
+  const size = large ? 96 : small ? 60 : 76;
+  return (
+    <div className={`group relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-2 ${large ? 'p-8 w-48' : small ? 'p-4 w-28' : 'p-6 w-36'}`}
+      style={{
+        background:'linear-gradient(145deg, rgba(201,168,76,0.08) 0%, rgba(11,16,38,0.6) 100%)',
+        border:'1px solid rgba(201,168,76,0.18)',
+        borderRadius:'1.5rem',
+        backdropFilter:'blur(16px)',
+        boxShadow:'0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(201,168,76,0.15)',
+      }}>
+      {/* Top shimmer */}
+      <div className="absolute top-0 left-6 right-6 h-px rounded-full pointer-events-none"
+        style={{background:'linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)'}} />
+      {/* Hover glow */}
+      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{background:'radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.12), transparent 70%)'}} />
+      <div className="relative mb-3 group-hover:scale-105 transition-transform duration-300">
+        <Avatar fotoUrl={b.foto_url} nama={b.nama} size={size} gold />
+      </div>
+      <p className={`font-bold text-[#FFF8E7] leading-snug ${large ? 'text-sm' : 'text-xs'}`}>{b.nama}</p>
+      {b.jabatan && (
+        <span className={`mt-1.5 inline-block font-bold rounded-full tracking-wide ${large ? 'text-[11px] px-3 py-1' : 'text-[9px] px-2 py-0.5'}`}
+          style={{color:'#D4AF37', background:'rgba(201,168,76,0.12)', border:'1px solid rgba(201,168,76,0.25)'}}>
+          {b.jabatan}
+        </span>
+      )}
+      {b.periode && <p className="text-[9px] mt-1" style={{color:'rgba(255,248,231,0.3)'}}>{b.periode}</p>}
+    </div>
+  );
+}
+
 function initials(name:string)    { return name.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase(); }
 function formatTgl(d:string)      { return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); }
 
-/* ── Avatar component ─────────────────────────────────────────── */
-function Avatar({ fotoUrl, nama, size }: { fotoUrl:string|null; nama:string; size:number }) {
+function Avatar({ fotoUrl, nama, size, gold }: { fotoUrl:string|null; nama:string; size:number; gold?: boolean }) {
   if (fotoUrl) return (
-    <img src={fotoUrl} alt={nama} style={{ width: size, height: size }}
-      className="rounded-full object-cover ring-4 ring-white shadow-xl" />
+    <img src={fotoUrl} alt={nama} style={{
+      width: size, height: size,
+      boxShadow: gold ? '0 0 0 3px rgba(201,168,76,0.5), 0 0 0 6px rgba(201,168,76,0.12)' : undefined
+    }} className="rounded-full object-cover" />
   );
   return (
-    <div style={{ width: size, height: size, fontSize: size * 0.32 }}
-      className={`rounded-full bg-gradient-to-br ${avatarColor(nama)} ring-4 ring-white shadow-xl flex items-center justify-center text-white font-extrabold`}>
+    <div style={{ width: size, height: size, fontSize: size * 0.32,
+      boxShadow: gold ? '0 0 0 3px rgba(201,168,76,0.4), 0 0 16px rgba(201,168,76,0.2)' : undefined }}
+      className={`rounded-full bg-gradient-to-br ${avatarColor(nama)} flex items-center justify-center text-white font-extrabold`}>
       {initials(nama)}
     </div>
   );
 }
 
-/* ── Mini icons ────────────────────────────────────────────────── */
-const IcoCalendar   = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>;
-const IcoMegaphone  = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 1 8.835-2.535m0 0A23.74 23.74 0 0 1 18.795 3c1.167 0 2.315.09 3.438.266m-3.438-.266 2.912 16.494M12 12h.008v.008H12V12Z" /></svg>;
-const IcoLocation   = () => <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>;
-const IcoClock      = () => <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>;
-const IcoLogin      = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>;
-const IcoChevDown   = ({ open }:{ open?:boolean }) => <svg className={`w-4 h-4 transition-transform duration-200 ${open?'rotate-180':''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>;
-const IcoScrollDown = () => <svg className="w-5 h-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>;
-const IcoUsers      = () => <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>;
+// Gold divider between sections
+function GoldDivider() {
+  return (
+    <div className="relative h-px overflow-visible" style={{background:'linear-gradient(90deg, transparent 0%, rgba(201,168,76,0.4) 30%, rgba(212,175,55,0.7) 50%, rgba(201,168,76,0.4) 70%, transparent 100%)'}}>
+      <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rotate-45"
+        style={{background:'#080613', border:'1px solid rgba(201,168,76,0.5)', boxShadow:'0 0 12px rgba(201,168,76,0.3)'}} />
+    </div>
+  );
+}
 
 const PROFIL_MENU = [
   { href: '#sejarah',  label: 'Sejarah Gereja' },
@@ -63,36 +129,23 @@ const PROFIL_MENU = [
   { href: '#gembala',  label: 'Gembala Jemaat' },
 ];
 
-/* ════════════════════════════════════════════════════════════════
-   SECTION LABEL helper
-   ════════════════════════════════════════════════════════════════ */
-function SectionLabel({ tag, title, sub }: { tag:string; title:string; sub?:string }) {
-  return (
-    <div className="text-center mb-14">
-      <span className="text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full">{tag}</span>
-      <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-900">{title}</h2>
-      {sub && <p className="mt-3 text-gray-500 text-sm max-w-xl mx-auto">{sub}</p>}
-    </div>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════════
-   MAIN PAGE
-   ════════════════════════════════════════════════════════════════ */
 export default function LandingPage() {
   const [stats, setStats]           = useState<Stats|null>(null);
   const [jadwal, setJadwal]         = useState<Jadwal[]>([]);
   const [pengumuman, setPengumuman] = useState<Pengumuman[]>([]);
+  const [program, setProgram]       = useState<Program[]>([]);
   const [bpj, setBpj]               = useState<BPJ[]>([]);
   const [gembala, setGembala]       = useState<Gembala[]>([]);
   const [galeri, setGaleri]         = useState<GaleriItem[]>([]);
   const [loading, setLoading]       = useState(true);
   const [profilLoading, setProfilLoading] = useState(true);
 
+  const [kegiatanTab, setKegiatanTab] = useState<'jadwal'|'info'|'program'|'galeri'>('jadwal');
   const [menuOpen, setMenuOpen]           = useState(false);
   const [profileDrop, setProfileDrop]     = useState(false);
   const [mobileProfile, setMobileProfile] = useState(false);
   const [scrolled, setScrolled]           = useState(false);
+  const [seniorIdx, setSeniorIdx]         = useState(0);
 
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +155,7 @@ export default function LandingPage() {
         setStats(res.data.stats);
         setJadwal(res.data.jadwal);
         setPengumuman(res.data.pengumuman);
+        setProgram(res.data.program ?? []);
         setGaleri(res.data.galeri ?? []);
       }
     }).catch(console.error).finally(() => setLoading(false));
@@ -116,6 +170,10 @@ export default function LandingPage() {
     fetch(GALERI_URL).then(r=>r.json()).then(res => {
       if (res.status === 'success') setGaleri(res.data);
     }).catch(console.error);
+
+    fetch(PROGRAM_URL).then(r=>r.json()).then(res => {
+      if (res.status === 'success') setProgram(res.data);
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -124,7 +182,6 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileDrop(false);
@@ -134,524 +191,1039 @@ export default function LandingPage() {
   }, []);
 
   const sortedJadwal = [...jadwal].sort((a,b) => HARI_ORDER.indexOf(a.hari)-HARI_ORDER.indexOf(b.hari));
-  const navText = scrolled ? 'text-gray-700 hover:text-blue-600' : 'text-white/90 hover:text-white';
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily:"'Inter','Segoe UI',sans-serif" }}>
+    <div className="min-h-screen" style={{ fontFamily:"'Georgia','Times New Roman',serif", backgroundColor:'#080613' }}>
 
-      {/* ══════════════════════════════════════════════
-          NAVBAR
-      ══════════════════════════════════════════════ */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/95 backdrop-blur-md shadow-md border-b border-gray-100' : 'bg-transparent'}`}>
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between h-16">
-          {/* Logo */}
+      {/* ── CSS Keyframes ─────────────────────────────────────────── */}
+      <style>{`
+        @keyframes float-slow { 0%,100%{transform:translateY(0) translateX(0)} 33%{transform:translateY(-18px) translateX(8px)} 66%{transform:translateY(-8px) translateX(-6px)} }
+        @keyframes float-medium { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-24px) scale(1.04)} }
+        @keyframes shimmer-gold { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes glow-pulse { 0%,100%{opacity:0.4; transform:scale(1)} 50%{opacity:0.7; transform:scale(1.08)} }
+        @keyframes particle-rise { 0%{transform:translateY(0) translateX(0) scale(1);opacity:0.6} 50%{opacity:0.9} 100%{transform:translateY(-120px) translateX(20px) scale(0.3);opacity:0} }
+        @keyframes fade-in-up { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes cross-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+        .float-1 { animation: float-slow 9s ease-in-out infinite; }
+        .float-2 { animation: float-medium 7s ease-in-out infinite; }
+        .float-3 { animation: float-slow 11s ease-in-out infinite 2s; }
+        .glow-orb { animation: glow-pulse 4s ease-in-out infinite; }
+        .shimmer-text {
+          background: linear-gradient(90deg, #C9A84C 0%, #FFF8E7 40%, #D4AF37 60%, #C9A84C 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmer-gold 4s linear infinite;
+        }
+        .particle {
+          position: absolute;
+          width: 3px; height: 3px;
+          border-radius: 50%;
+          background: rgba(201,168,76,0.7);
+          animation: particle-rise 6s ease-in infinite;
+        }
+        .section-fade { animation: fade-in-up 0.7s ease both; }
+        .glass-card {
+          background: linear-gradient(145deg, rgba(201,168,76,0.07) 0%, rgba(8,6,19,0.7) 100%);
+          border: 1px solid rgba(201,168,76,0.15);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.12);
+        }
+        .glass-card:hover {
+          border-color: rgba(201,168,76,0.3);
+          box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 20px rgba(201,168,76,0.08), inset 0 1px 0 rgba(201,168,76,0.2);
+        }
+        .gold-btn {
+          background: linear-gradient(135deg, #C9A84C 0%, #D4AF37 50%, #C9A84C 100%);
+          background-size: 200% auto;
+          transition: background-position 0.4s ease, transform 0.15s ease, box-shadow 0.3s ease;
+          box-shadow: 0 4px 24px rgba(201,168,76,0.35);
+        }
+        .gold-btn:hover { background-position: right center; box-shadow: 0 8px 32px rgba(201,168,76,0.5); }
+        .gold-btn:active { transform: scale(0.97); }
+        .sacred-cross {
+          position: relative;
+          display: inline-flex; align-items: center; justify-content: center;
+        }
+        .sacred-cross::before, .sacred-cross::after {
+          content: '';
+          position: absolute;
+          background: rgba(201,168,76,0.3);
+        }
+        .sacred-cross::before { width: 1px; height: 28px; }
+        .sacred-cross::after  { width: 20px; height: 1px; top: 40%; }
+      `}</style>
+
+      {/* ══ NAVBAR ══════════════════════════════════════════════════ */}
+      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'backdrop-blur-2xl border-b'
+          : 'bg-transparent'
+      }`}
+        style={scrolled ? {
+          background:'rgba(8,6,19,0.92)',
+          borderBottomColor:'rgba(201,168,76,0.18)',
+        } : {}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-[68px]">
           <div className="flex items-center gap-3">
-            <img src="/images/logo/logo-icon.svg" alt="Logo" className="w-9 h-9 drop-shadow" />
+            <div className="relative">
+              <img src="/images/logo/logo-icon.svg" alt="Logo" className="w-9 h-9 drop-shadow-lg" />
+            </div>
             <div>
-              <p className={`text-sm font-extrabold leading-tight transition-colors ${scrolled?'text-gray-900':'text-white'}`}>GKII Longloreh</p>
-              <p className={`text-xs leading-tight hidden sm:block transition-colors ${scrolled?'text-gray-400':'text-white/70'}`}>Gereja Kemah Injil Indonesia</p>
+              <p className={`text-sm font-bold leading-tight tracking-wide transition-colors ${scrolled ? '' : 'text-white'}`}
+                style={scrolled ? {color:'#FFF8E7'} : {}}>
+                GKII Longloreh
+              </p>
+              <p className="text-[10px] leading-tight hidden sm:block tracking-widest uppercase" style={{color:'#C9A84C', opacity: scrolled ? 1 : 0.8}}>
+                Gereja Kemah Injil Indonesia
+              </p>
             </div>
           </div>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
-            {/* Profile Gereja dropdown */}
+          {/* Desktop */}
+          <div className="hidden md:flex items-center gap-7">
             <div className="relative" ref={profileRef}>
               <button onClick={() => setProfileDrop(o=>!o)}
-                className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${navText}`}>
-                Profile Gereja <IcoChevDown open={profileDrop} />
+                className="flex items-center gap-1.5 text-sm font-semibold transition-colors"
+                style={{color: scrolled ? '#FFF8E7' : 'rgba(255,248,231,0.85)'}}>
+                Profile Gereja
+                {profileDrop
+                  ? <ChevronUp className="w-4 h-4 transition-transform" />
+                  : <ChevronDown className="w-4 h-4 transition-transform" />}
               </button>
               {profileDrop && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-56 rounded-2xl overflow-hidden z-50"
+                  style={{
+                    background:'rgba(8,6,19,0.96)',
+                    border:'1px solid rgba(201,168,76,0.2)',
+                    backdropFilter:'blur(24px)',
+                    boxShadow:'0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,168,76,0.05)',
+                  }}>
                   {PROFIL_MENU.map(({ href, label }) => (
                     <a key={href} href={href} onClick={() => setProfileDrop(false)}
-                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />{label}
+                      className="flex items-center gap-3 px-4 py-3.5 text-sm transition-colors border-b last:border-0"
+                      style={{color:'rgba(255,248,231,0.7)', borderBottomColor:'rgba(201,168,76,0.08)'}}
+                      onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color='#D4AF37';(e.currentTarget as HTMLElement).style.background='rgba(201,168,76,0.06)'}}
+                      onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color='rgba(255,248,231,0.7)';(e.currentTarget as HTMLElement).style.background='transparent'}}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:'#C9A84C'}} />
+                      {label}
                     </a>
                   ))}
                 </div>
               )}
             </div>
-            <a href="#jadwal"      className={`text-sm font-semibold transition-colors ${navText}`}>Jadwal Ibadah</a>
-            <a href="#pengumuman"  className={`text-sm font-semibold transition-colors ${navText}`}>Pengumuman</a>
-            <a href="#galeri"      className={`text-sm font-semibold transition-colors ${navText}`}>Galeri</a>
+            <a href="#jadwal"
+              className="text-sm font-semibold transition-colors hover:opacity-100"
+              style={{color:'rgba(255,248,231,0.8)'}}>
+              Kegiatan Gereja
+            </a>
             <Link to="/login"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 px-5 py-2 text-sm font-bold text-white transition-all shadow-lg shadow-blue-600/30">
-              <IcoLogin /> Masuk
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold text-[#080613] gold-btn">
+              <LogIn className="w-4 h-4" /> Masuk
             </Link>
           </div>
 
           {/* Mobile toggle */}
           <button
-            className={`md:hidden p-2 rounded-lg transition-colors ${scrolled?'text-gray-700 hover:bg-gray-100':'text-white hover:bg-white/20'}`}
+            className="md:hidden p-2 rounded-xl transition-colors"
+            style={{color:'rgba(255,248,231,0.8)'}}
             onClick={() => setMenuOpen(o=>!o)}>
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        : <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />}
+              {menuOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                : <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />}
             </svg>
           </button>
         </div>
 
         {/* Mobile drawer */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ${menuOpen?'max-h-screen':'max-h-0'}`}>
-          <div className="bg-white border-t border-gray-100 px-5 py-4 flex flex-col gap-1 shadow-lg">
-            {/* Profile Gereja accordion */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-screen' : 'max-h-0'}`}>
+          <div className="px-5 py-4 flex flex-col gap-0.5"
+            style={{background:'rgba(8,6,19,0.97)', borderTop:'1px solid rgba(201,168,76,0.15)'}}>
             <button onClick={() => setMobileProfile(o=>!o)}
-              className="flex items-center justify-between py-2.5 text-sm font-semibold text-gray-700">
-              Profile Gereja <IcoChevDown open={mobileProfile} />
+              className="flex items-center justify-between py-3 text-sm font-semibold"
+              style={{color:'#FFF8E7'}}>
+              Profile Gereja
+              {mobileProfile ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
             {mobileProfile && (
-              <div className="pl-4 flex flex-col gap-1 mb-1">
+              <div className="pl-4 mb-2 flex flex-col">
                 {PROFIL_MENU.map(({ href, label }) => (
                   <a key={href} href={href} onClick={() => { setMenuOpen(false); setMobileProfile(false); }}
-                    className="py-2 text-sm text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-blue-400" />{label}
+                    className="py-2.5 text-sm transition-colors flex items-center gap-2.5"
+                    style={{color:'rgba(255,248,231,0.5)'}}>
+                    <span className="w-1 h-1 rounded-full" style={{background:'#C9A84C'}} />{label}
                   </a>
                 ))}
               </div>
             )}
-            <a href="#jadwal" onClick={()=>setMenuOpen(false)} className="py-2.5 text-sm font-semibold text-gray-700 hover:text-blue-600">Jadwal Ibadah</a>
-            <a href="#pengumuman" onClick={()=>setMenuOpen(false)} className="py-2.5 text-sm font-semibold text-gray-700 hover:text-blue-600">Pengumuman</a>
-            <a href="#galeri" onClick={()=>setMenuOpen(false)} className="py-2.5 text-sm font-semibold text-gray-700 hover:text-blue-600">Galeri</a>
+            <a href="#jadwal" onClick={()=>setMenuOpen(false)}
+              className="py-3 text-sm font-semibold border-t"
+              style={{color:'rgba(255,248,231,0.8)', borderTopColor:'rgba(201,168,76,0.1)'}}>
+              Kegiatan Gereja
+            </a>
             <Link to="/login" onClick={()=>setMenuOpen(false)}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-md">
-              <IcoLogin /> Masuk ke Sistem
+              className="mt-3 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-[#080613] gold-btn">
+              <LogIn className="w-4 h-4" /> Masuk ke Sistem
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ══════════════════════════════════════════════
-          HERO — full viewport
-      ══════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col justify-end overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage:`url('/aset-landingpage/gkii.webp')` }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/80" />
-        <div className="relative max-w-6xl mx-auto w-full px-5 sm:px-8 pb-16 pt-32">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 mb-5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 px-4 py-1.5 text-xs font-bold tracking-widest uppercase text-white">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              Gereja Kemah Injil Indonesia
-            </span>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] mb-5 drop-shadow-lg">
-              Selamat Datang<br /><span className="text-blue-300">GKII Longloreh</span>
-            </h1>
-            <p className="text-white/85 text-lg md:text-xl mb-8 leading-relaxed max-w-xl">
-              Bersama bertumbuh dalam iman, melayani dengan kasih,<br className="hidden md:block" />
-              dan bersaksi bagi kemuliaan Tuhan.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <a href="#jadwal" className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-700 hover:bg-blue-50 active:scale-95 px-6 py-3 text-sm font-bold transition-all shadow-xl">
-                <IcoCalendar /> Jadwal Ibadah
-              </a>
-              <a href="#sejarah" className="inline-flex items-center gap-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 backdrop-blur-sm border border-white/30 px-6 py-3 text-sm font-bold text-white transition-all">
-                Profile Gereja
-              </a>
+      {/* ══ HERO ════════════════════════════════════════════════════ */}
+      <section className="relative min-h-screen flex flex-col overflow-hidden" style={{background:'#080613'}}>
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <img src="/aset-landingpage/gkii.webp" alt="Jemaat GKII Longloreh"
+            className="w-full h-full object-cover object-center opacity-30" />
+          <div className="absolute inset-0" style={{background:'linear-gradient(to bottom, rgba(8,6,19,0.4) 0%, rgba(8,6,19,0.55) 50%, rgba(8,6,19,0.95) 100%)'}} />
+          {/* Radial gold spotlight */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4 w-[900px] h-[900px] rounded-full glow-orb pointer-events-none"
+            style={{background:'radial-gradient(circle, rgba(201,168,76,0.12) 0%, rgba(201,168,76,0.04) 40%, transparent 70%)'}} />
+        </div>
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(14)].map((_,i) => (
+            <div key={i} className="particle" style={{
+              left:`${8 + (i * 6.7) % 84}%`,
+              bottom:`${10 + (i * 11) % 40}%`,
+              animationDelay:`${i * 0.8}s`,
+              animationDuration:`${5 + (i % 4)}s`,
+              opacity: 0.3 + (i % 3) * 0.15,
+              width: i % 3 === 0 ? '2px' : '3px',
+              height: i % 3 === 0 ? '2px' : '3px',
+            }} />
+          ))}
+          {/* Floating cross / sacred geometry */}
+          <div className="absolute top-1/4 right-16 opacity-[0.06] float-1">
+            <div style={{width:'80px',height:'80px',position:'relative'}}>
+              <div style={{position:'absolute',left:'50%',top:0,width:'2px',height:'100%',background:'#C9A84C',transform:'translateX(-50%)'}} />
+              <div style={{position:'absolute',top:'35%',left:0,width:'100%',height:'2px',background:'#C9A84C'}} />
+            </div>
+          </div>
+          <div className="absolute bottom-1/3 left-12 opacity-[0.04] float-3">
+            <div style={{width:'60px',height:'60px',position:'relative'}}>
+              <div style={{position:'absolute',left:'50%',top:0,width:'1px',height:'100%',background:'#D4AF37',transform:'translateX(-50%)'}} />
+              <div style={{position:'absolute',top:'35%',left:0,width:'100%',height:'1px',background:'#D4AF37'}} />
             </div>
           </div>
         </div>
-        <div className="relative flex justify-center pb-6 text-white/60"><IcoScrollDown /></div>
+
+        {/* Content */}
+        <div className="relative flex-1 flex flex-col items-center justify-center text-center px-5 pt-28 pb-20">
+          {/* Pill badge */}
+          <div className="inline-flex items-center gap-2 mb-7 px-5 py-2 rounded-full section-fade"
+            style={{border:'1px solid rgba(201,168,76,0.3)', background:'rgba(201,168,76,0.08)', backdropFilter:'blur(12px)'}}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#C9A84C'}} />
+            <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{color:'rgba(255,248,231,0.85)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Gereja Kemah Injil Indonesia</span>
+          </div>
+
+          {/* Main heading */}
+          <h1 className="leading-none mb-6 section-fade" style={{animationDelay:'0.1s'}}>
+            <span className="block text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight" style={{color:'rgba(255,248,231,0.9)', fontFamily:"Georgia,'Times New Roman',serif"}}>Selamat Datang di</span>
+            <span className="block text-6xl sm:text-8xl md:text-9xl font-black italic shimmer-text mt-1"
+              style={{fontFamily:"Georgia,'Times New Roman',serif"}}>
+              GKII
+            </span>
+            <span className="block text-3xl sm:text-5xl md:text-6xl font-bold tracking-wide mt-2" style={{color:'rgba(255,248,231,0.85)', fontFamily:"Georgia,'Times New Roman',serif"}}>Long Loreh</span>
+          </h1>
+
+          <p className="text-base md:text-lg max-w-md leading-relaxed mb-10 section-fade" style={{color:'rgba(255,248,231,0.55)', animationDelay:'0.2s', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+            Bersama bertumbuh dalam iman, melayani dengan kasih,
+            dan bersaksi bagi kemuliaan Tuhan.
+          </p>
+
+          <div className="flex flex-wrap gap-4 justify-center section-fade" style={{animationDelay:'0.3s'}}>
+            <a href="#jadwal"
+              className="inline-flex items-center gap-2.5 font-bold px-8 py-3.5 rounded-full text-sm gold-btn"
+              style={{color:'#080613', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+              <Calendar className="w-4 h-4" /> Jadwal Ibadah
+            </a>
+            <a href="#sejarah"
+              className="inline-flex items-center gap-2.5 font-semibold px-8 py-3.5 rounded-full text-sm transition-all active:scale-95"
+              style={{background:'rgba(255,248,231,0.07)', border:'1px solid rgba(255,248,231,0.18)', backdropFilter:'blur(8px)', color:'rgba(255,248,231,0.85)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+              Kenali Kami
+            </a>
+          </div>
+        </div>
+
+        <div className="relative flex justify-center pb-8" style={{color:'rgba(201,168,76,0.5)'}}>
+          <ChevronDown className="w-5 h-5 animate-bounce" />
+        </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          STATS — floating cards
-      ══════════════════════════════════════════════ */}
-      <div className="relative z-10 max-w-5xl mx-auto px-5 sm:px-8 -mt-6">
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-          {/* Total row */}
-          <div className="flex flex-col items-center justify-center gap-1.5 py-6 border-b border-gray-100 bg-blue-50/50">
-            <span className="text-blue-600 opacity-80"><IcoUsers /></span>
-            <p className="text-4xl md:text-5xl font-extrabold text-blue-600">
-              {loading ? <span className="inline-block w-14 h-10 bg-blue-100 rounded animate-pulse" /> : (stats?.total ?? 0)}
-            </p>
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Total Jemaat Keseluruhan</p>
-          </div>
-          {/* 6 seksi grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 divide-x divide-gray-100">
-            {[
-              { label:'Sekolah Minggu', val:stats?.sekolah_minggu, color:'text-emerald-600',  bg:'hover:bg-emerald-50' },
-              { label:'Remaja',         val:stats?.remaja,         color:'text-violet-600',   bg:'hover:bg-violet-50'  },
-              { label:'Pemuda',         val:stats?.pemuda,         color:'text-orange-600',   bg:'hover:bg-orange-50'  },
-              { label:'Perkauan',       val:stats?.perkauan,       color:'text-rose-600',     bg:'hover:bg-rose-50'    },
-              { label:'Perkaria',       val:stats?.perkaria,       color:'text-teal-600',     bg:'hover:bg-teal-50'    },
-              { label:'Lansia',         val:stats?.lansia,         color:'text-amber-600',    bg:'hover:bg-amber-50'   },
-            ].map(({ label, val, color, bg }) => (
-              <div key={label} className={`flex flex-col items-center justify-center gap-1 py-5 px-2 transition-colors ${bg} group`}>
-                <p className={`text-2xl md:text-3xl font-extrabold ${color}`}>
-                  {loading ? <span className="inline-block w-8 h-7 bg-gray-100 rounded animate-pulse" /> : (val ?? 0)}
+      {/* ══ STATS ════════════════════════════════════════════════════ */}
+      <div style={{background:'linear-gradient(180deg, #080613 0%, #0B1026 100%)'}}>
+        <GoldDivider />
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-12 md:py-16">
+          {/* Total + L/P */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10 pb-10"
+            style={{borderBottom:'1px solid rgba(201,168,76,0.1)'}}>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] mb-2" style={{color:'rgba(201,168,76,0.7)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Total Jemaat Keseluruhan</p>
+              <div className="flex items-end gap-6">
+                <p className="font-black leading-none shimmer-text" style={{fontSize:'clamp(3.5rem,9vw,6rem)', fontFamily:"Georgia,'Times New Roman',serif"}}>
+                  {loading ? <span className="inline-block w-28 h-16 rounded-xl animate-pulse align-middle" style={{background:'rgba(201,168,76,0.1)'}} /> : (stats?.total ?? 0)}
                 </p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider text-center leading-tight">{label}</p>
+                {!loading && stats && (
+                  <div className="flex gap-3 mb-2">
+                    <div className="text-center">
+                      <p className="text-xl font-black leading-none" style={{color:'#60a5fa', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{stats.total_laki}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5" style={{color:'rgba(96,165,250,0.5)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Laki-Laki</p>
+                    </div>
+                    <div className="w-px h-8 self-end mb-1" style={{background:'rgba(201,168,76,0.15)'}} />
+                    <div className="text-center">
+                      <p className="text-xl font-black leading-none" style={{color:'#f472b6', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{stats.total_perempuan}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5" style={{color:'rgba(244,114,182,0.5)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Perempuan</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed max-w-xs" style={{color:'rgba(255,248,231,0.2)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+              Jiwa yang terdaftar dalam komunitas GKII Jemaat Long Loreh dan menjadi bagian dari keluarga rohani kami.
+            </p>
+          </div>
+          {/* 6 seksi */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { label:'Sekolah Minggu', key:'sekolah_minggu', lKey:'sm_laki',      pKey:'sm_perempuan',     color:'#34d399', hasLP:true  },
+              { label:'Remaja',         key:'remaja',         lKey:'remaja_laki',  pKey:'remaja_perempuan', color:'#a78bfa', hasLP:true  },
+              { label:'Pemuda',         key:'pemuda',         lKey:'pemuda_laki',  pKey:'pemuda_perempuan', color:'#60a5fa', hasLP:true  },
+              { label:'Perkauan',       key:'perkauan',       lKey:'',             pKey:'',                 color:'#f87171', hasLP:false },
+              { label:'Perkaria',       key:'perkaria',       lKey:'',             pKey:'',                 color:'#2dd4bf', hasLP:false },
+              { label:'Lansia',         key:'lansia',         lKey:'lansia_laki',  pKey:'lansia_perempuan', color:'#D4AF37', hasLP:true  },
+            ].map(({ label, key, lKey, pKey, color, hasLP }) => (
+              <div key={key} className="rounded-2xl p-4 group transition-all duration-300 cursor-default"
+                style={{
+                  background:`rgba(${color.startsWith('#') ? hexToRgb(color) : '201,168,76'}, 0.05)`,
+                  border:`1px solid rgba(${color.startsWith('#') ? hexToRgb(color) : '201,168,76'}, 0.18)`,
+                }}>
+                <p className="text-3xl md:text-4xl font-black leading-none mb-1" style={{color, fontFamily:"Georgia,'Times New Roman',serif"}}>
+                  {loading ? <span className="inline-block w-10 h-8 rounded animate-pulse" style={{background:'rgba(255,255,255,0.07)'}} /> : (stats?.[key as keyof Stats] ?? 0)}
+                </p>
+                <p className="text-[9px] font-bold uppercase tracking-wider leading-tight mb-2" style={{color:'rgba(255,248,231,0.3)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{label}</p>
+                {hasLP && !loading && stats && (
+                  <div className="flex gap-2 mt-1">
+                    <span className="text-[10px] font-semibold" style={{color:'rgba(96,165,250,0.7)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>L {(stats as unknown as Record<string,number>)[lKey] ?? 0}</span>
+                    <span className="text-[10px]" style={{color:'rgba(255,255,255,0.12)'}}>/ </span>
+                    <span className="text-[10px] font-semibold" style={{color:'rgba(244,114,182,0.7)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>P {(stats as unknown as Record<string,number>)[pKey] ?? 0}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════
-          SEJARAH GEREJA  #sejarah
-      ══════════════════════════════════════════════ */}
-      <section id="sejarah" className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Tentang Kami" title="Sejarah Gereja" sub="Perjalanan panjang iman yang telah membentuk komunitas GKII Longloreh hingga hari ini." />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-            <div className="space-y-5 text-gray-600 leading-relaxed">
-              <p>
-                GKII Longloreh berdiri sebagai salah satu bagian dari gerakan Gereja Kemah Injil Indonesia yang telah lama
-                melayani masyarakat dengan penuh dedikasi. Sejak pertama kali berdiri, gereja ini menjadi tempat
-                berkumpulnya jemaat yang rindu untuk mengenal Tuhan lebih dalam.
-              </p>
-              <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et
-                dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
-                eu fugiat nulla pariatur.
-              </p>
-              <p>
-                Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-                laborum. Gereja ini terus bertumbuh dan berkembang melayani jemaat dengan sepenuh hati, membawa
-                terang Injil bagi setiap jiwa yang datang.
-              </p>
-            </div>
-            {/* Timeline visual */}
-            <div className="relative pl-6 border-l-2 border-blue-100 space-y-8">
-              {[
-                { year:'Awal Berdiri',   desc:'Gereja didirikan oleh para misionaris yang membawa Injil ke wilayah Longloreh.' },
-                { year:'Perkembangan',   desc:'Jemaat terus bertambah dan gereja membangun fasilitas pelayanan yang lebih baik.' },
-                { year:'Saat Ini',       desc:'GKII Longloreh kini hadir sebagai komunitas iman yang aktif melayani dan bersaksi.' },
-              ].map(({ year, desc }, i) => (
-                <div key={i} className="relative">
-                  <div className="absolute -left-8 top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-white shadow" />
-                  <h4 className="font-bold text-gray-900 mb-1">{year}</h4>
-                  <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          VISI & MISI  #visi-misi
-      ══════════════════════════════════════════════ */}
-      <section id="visi-misi" className="py-24 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Arah & Tujuan" title="Visi & Misi" sub="Landasan yang memandu setiap langkah pelayanan GKII Longloreh." />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Visi */}
-            <div className="relative bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/3" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-1/3 -translate-x-1/3" />
-              <div className="relative">
-                <span className="inline-block text-xs font-bold uppercase tracking-widest text-blue-200 mb-4">Visi</span>
-                <h3 className="text-2xl font-extrabold mb-4 leading-snug">
-                  Menjadi Gereja yang Hidup, Bertumbuh, dan Memberkati
-                </h3>
-                <p className="text-blue-100 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-                  et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+      {/* ══ SEJARAH ════════════════════════════════════════════════ */}
+      <GoldDivider />
+      <section id="sejarah" className="py-28 overflow-hidden" style={{background:'linear-gradient(160deg, #0B1026 0%, #080613 60%, #0B1026 100%)'}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Kiri */}
+            <div>
+              <div className="inline-flex items-center gap-2 mb-6">
+                <span className="w-8 h-px" style={{background:'#C9A84C'}} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Tentang Kami</span>
+              </div>
+              <h2 className="font-black leading-tight mb-8" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2.8rem,6vw,4rem)', color:'#FFF8E7'}}>
+                Sejarah<br /><em className="not-italic" style={{color:'#D4AF37'}}>Gereja</em>
+              </h2>
+              <div className="space-y-4 leading-relaxed text-[15px]" style={{color:'rgba(255,248,231,0.55)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                <p>
+                  GKII Jemaat Long Loreh berdiri sebagai bagian dari gerakan misi Gereja Kemah Injil Indonesia
+                  di wilayah Kalimantan. Sejak pertama berdiri, gereja ini menjadi rumah rohani bagi jemaat
+                  yang rindu bertumbuh dalam iman dan memperdalam hubungan dengan Tuhan.
+                </p>
+                <p>
+                  Melalui perjalanan panjang yang diwarnai dedikasi para hamba Tuhan, pelayanan gereja
+                  terus berkembang — menjangkau keluarga-keluarga, membina generasi muda, dan membangun
+                  komunitas yang saling mengasihi di atas dasar Firman Tuhan.
                 </p>
               </div>
-            </div>
-            {/* Misi */}
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-              <span className="inline-block text-xs font-bold uppercase tracking-widest text-blue-600 mb-4">Misi</span>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-5">Wujud Nyata Pelayanan Kami</h3>
-              <ul className="space-y-4">
+              {/* Stats kecil */}
+              <div className="flex flex-wrap gap-4 mt-10">
                 {[
-                  'Memberitakan Injil Yesus Kristus kepada setiap jiwa di seluruh pelosok wilayah.',
-                  'Membangun jemaat yang dewasa dalam iman melalui Firman, doa, dan persekutuan.',
-                  'Melayani masyarakat sekitar dengan kasih yang nyata dan tindakan yang konkret.',
-                  'Mendidik generasi muda untuk menjadi penerus pelayanan yang takut akan Tuhan.',
-                ].map((m, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center mt-0.5">{i+1}</span>
-                    <p className="text-sm text-gray-600 leading-relaxed">{m}</p>
-                  </li>
+                  { val:'5', label:'Kelompok Doa' },
+                  { val:'6', label:'Seksi Pelayanan' },
+                  { val:'3+', label:'Ibadah / Minggu' },
+                ].map(({ val, label }) => (
+                  <div key={label} className="rounded-2xl px-6 py-4 text-center transition-all hover:-translate-y-1 duration-300"
+                    style={{border:'1px solid rgba(201,168,76,0.2)', background:'rgba(201,168,76,0.06)'}}>
+                    <p className="text-3xl font-black" style={{color:'#D4AF37', fontFamily:"Georgia,'Times New Roman',serif"}}>{val}</p>
+                    <p className="text-xs font-semibold mt-0.5" style={{color:'rgba(201,168,76,0.6)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{label}</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
+            </div>
+
+            {/* Kanan */}
+            <div className="relative pt-6 pb-8 lg:pb-0">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]"
+                style={{border:'1px solid rgba(201,168,76,0.15)', boxShadow:'0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08)'}}>
+                <img src="/aset-landingpage/gkii.webp" alt="Jemaat GKII Longloreh"
+                  className="w-full h-full object-cover opacity-70" />
+                <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(8,6,19,0.85) 0%, rgba(8,6,19,0.2) 50%, transparent 100%)'}} />
+                <div className="absolute bottom-0 left-0 right-0 p-7">
+                  <p className="font-bold italic leading-snug" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif", fontSize:'1.2rem'}}>
+                    "Bersama bertumbuh,<br />bersama melayani."
+                  </p>
+                  <p className="text-xs mt-2 tracking-wider uppercase" style={{color:'rgba(201,168,76,0.6)'}}>— GKII Long Loreh</p>
+                </div>
+              </div>
+              {/* Floating timeline */}
+              <div className="absolute -bottom-4 sm:-bottom-4 right-2 sm:right-6 rounded-2xl p-5 w-48"
+                style={{
+                  background:'rgba(8,6,19,0.95)',
+                  border:'1px solid rgba(201,168,76,0.2)',
+                  backdropFilter:'blur(20px)',
+                  boxShadow:'0 24px 48px rgba(0,0,0,0.6), 0 0 16px rgba(201,168,76,0.06)',
+                }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Perjalanan Iman</p>
+                <div className="relative pl-4 space-y-4" style={{borderLeft:'2px solid rgba(201,168,76,0.3)'}}>
+                  {[
+                    { label:'Berdiri', sub:'Injil masuk Long Loreh' },
+                    { label:'Berkembang', sub:'Jemaat terus bertambah' },
+                    { label:'Kini', sub:'Aktif melayani & bersaksi' },
+                  ].map(({ label, sub }, i) => (
+                    <div key={i} className="relative">
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2"
+                        style={{background:'#C9A84C', borderColor:'#080613', boxShadow:'0 0 8px rgba(201,168,76,0.5)'}} />
+                      <p className="text-xs font-bold" style={{color:'#FFF8E7', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{label}</p>
+                      <p className="text-[10px] leading-snug" style={{color:'rgba(255,248,231,0.35)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          NILAI KAMI (Iman / Kasih / Pelayanan)
-      ══════════════════════════════════════════════ */}
-      <section className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Identitas Kami" title="Dipanggil, Dibentuk, Diutus"
-            sub="Tiga pilar yang menjadi nafas kehidupan jemaat GKII Longloreh setiap hari." />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* ══ VISI & MISI ══════════════════════════════════════════════ */}
+      <GoldDivider />
+      <section id="visi-misi" className="py-28 overflow-hidden" style={{background:'#080613'}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <span className="w-8 h-px" style={{background:'rgba(201,168,76,0.5)'}} />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Arah & Tujuan</span>
+              <span className="w-8 h-px" style={{background:'rgba(201,168,76,0.5)'}} />
+            </div>
+            <h2 className="font-black" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2.5rem,7vw,4.5rem)', color:'#FFF8E7'}}>
+              Visi <em className="not-italic" style={{color:'#D4AF37'}}>&</em> Misi
+            </h2>
+            <p className="mt-3 text-xs font-bold uppercase tracking-[0.2em]" style={{color:'rgba(201,168,76,0.5)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>GKII Long Loreh — 2026</p>
+          </div>
+
+          {/* Visi */}
+          <div className="relative rounded-3xl overflow-hidden mb-8"
+            style={{
+              background:'linear-gradient(135deg, rgba(11,16,38,0.95) 0%, rgba(8,6,19,0.98) 100%)',
+              border:'1px solid rgba(201,168,76,0.25)',
+              boxShadow:'0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.2), 0 0 60px rgba(201,168,76,0.04)',
+            }}>
+            <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full pointer-events-none"
+              style={{background:'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)'}} />
+            <div className="absolute top-0 left-0 right-0 h-px"
+              style={{background:'linear-gradient(90deg, transparent, rgba(201,168,76,0.4), transparent)'}} />
+            <div className="relative p-8 md:p-14">
+              <div className="inline-flex items-center gap-3 mb-7 px-4 py-2 rounded-full"
+                style={{background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.2)'}}>
+                <Eye className="w-4 h-4" style={{color:'#D4AF37'}} />
+                <span className="text-[11px] font-bold uppercase tracking-widest" style={{color:'#D4AF37', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Visi</span>
+              </div>
+              <blockquote className="font-bold leading-snug max-w-4xl" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(1.1rem,2.5vw,1.6rem)', color:'#FFF8E7'}}>
+                "Menjadi jemaat GKII Long Loreh yang{' '}
+                <span className="shimmer-text">BERTUMBUH</span> dewasa di dalam Kristus,{' '}
+                <span className="shimmer-text">BERTAMBAH</span> dalam kualitas dan kuantitas pelayanan, serta{' '}
+                <span className="shimmer-text">BERDAMPAK</span> nyata bagi keluarga, gereja, dan masyarakat."
+              </blockquote>
+            </div>
+          </div>
+
+          {/* Misi — 3 pilar */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { color:'from-blue-500 to-blue-600', bg:'bg-blue-50', accent:'text-blue-600', border:'border-blue-100',
-                title:'Iman yang Teguh', desc:'Berpusat pada Firman Tuhan dan doa, kami membangun fondasi iman yang kokoh dalam kehidupan sehari-hari.',
-                icon:<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg> },
-              { color:'from-rose-500 to-rose-600', bg:'bg-rose-50', accent:'text-rose-600', border:'border-rose-100',
-                title:'Kasih yang Nyata', desc:'Kami percaya kasih bukan hanya kata-kata, tetapi tindakan nyata yang menyentuh jiwa dan menjangkau yang terluka.',
-                icon:<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg> },
-              { color:'from-emerald-500 to-emerald-600', bg:'bg-emerald-50', accent:'text-emerald-600', border:'border-emerald-100',
-                title:'Pelayanan Bersama', desc:'Setiap jemaat adalah pelayan. Bersama kami membangun gereja yang hidup, aktif, dan memberkati komunitas.',
-                icon:<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" /></svg> },
-            ].map(({ color, bg, accent, border, title, desc, icon }) => (
-              <div key={title} className={`relative rounded-2xl border ${border} ${bg} p-8 overflow-hidden group hover:-translate-y-1 hover:shadow-lg transition-all duration-300`}>
-                <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${color} text-white mb-5 shadow-lg`}>{icon}</div>
-                <h3 className={`text-lg font-extrabold ${accent} mb-2`}>{title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{desc}</p>
-                <div className={`absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br ${color} opacity-10 group-hover:opacity-20 transition-opacity`} />
+              {
+                no:'01', iconColor:'#60a5fa',
+                judul:'Bertumbuh', sub:'Spiritualitas & Kedewasaan Iman',
+                poin:['Menumbuhkan kerinduan jemaat terhadap ibadah, Firman Tuhan, dan persekutuan.','Membina jemaat agar memiliki iman yang dewasa, setia, dan berakar dalam Kristus.','Menguatkan disiplin rohani: ibadah, doa, pembacaan Firman, dan persekutuan.'],
+              },
+              {
+                no:'02', iconColor:'#a78bfa',
+                judul:'Bertambah', sub:'Komitmen & Pelayanan',
+                poin:['Menumbuhkan kesadaran jemaat sebagai anggota tubuh Kristus yang bertanggung jawab.','Mendorong keterlibatan aktif jemaat dalam pelayanan sesuai karunia.','Membangun loyalitas jemaat kepada GKII Long Loreh sebagai rumah rohani.'],
+              },
+              {
+                no:'03', iconColor:'#34d399',
+                judul:'Berdampak', sub:'Kesaksian & Kehidupan Sosial',
+                poin:['Menghadirkan kesaksian hidup Kristen yang nyata di tengah masyarakat.','Menjadi gereja yang peduli, melayani, dan membawa damai sejahtera.'],
+              },
+            ].map(({ no, iconColor, judul, sub, poin }) => (
+              <div key={no} className="group relative rounded-3xl p-7 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 glass-card">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{background:`rgba(${hexToRgb(iconColor)}, 0.15)`, border:`1px solid rgba(${hexToRgb(iconColor)}, 0.3)`}}>
+                    <span className="text-xs font-black tracking-wider" style={{color: iconColor, fontFamily:"'Inter','Segoe UI',sans-serif"}}>{no}</span>
+                  </div>
+                  <span className="text-6xl font-black opacity-[0.04] leading-none select-none" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif"}}>{no}</span>
+                </div>
+                <h3 className="text-xl font-extrabold mb-1" style={{color: iconColor, fontFamily:"Georgia,'Times New Roman',serif"}}>{judul}</h3>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-5" style={{color:'rgba(255,248,231,0.3)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{sub}</p>
+                <ul className="space-y-3">
+                  {poin.map((p, i) => (
+                    <li key={i} className="flex gap-3 text-sm leading-relaxed" style={{color:'rgba(255,248,231,0.5)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                      <span className="shrink-0 mt-2 w-1.5 h-1.5 rounded-full" style={{background: iconColor}} />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          BPJ PERIODE  #bpj
-      ══════════════════════════════════════════════ */}
-      <section id="bpj" className="py-24 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Kepengurusan" title="BPJ Periode" sub="Badan Pengurus Jemaat yang melayani dengan sepenuh hati." />
+      {/* ══ NILAI KAMI ════════════════════════════════════════════════ */}
+      <GoldDivider />
+      <section className="py-24" style={{background:'linear-gradient(180deg, #0B1026 0%, #080613 100%)'}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <span className="w-6 h-px" style={{background:'rgba(201,168,76,0.5)'}} />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Identitas Kami</span>
+              <span className="w-6 h-px" style={{background:'rgba(201,168,76,0.5)'}} />
+            </div>
+            <h2 className="font-black" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2rem,5vw,3.5rem)', color:'#FFF8E7'}}>
+              Dipanggil, Dibentuk, <em className="not-italic" style={{color:'#D4AF37'}}>Diutus</em>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { title:'Iman yang Teguh',    desc:'Berpusat pada Firman Tuhan dan doa, kami membangun fondasi iman yang kokoh dalam kehidupan sehari-hari.', icon:<Star className="w-6 h-6" />, color:'#D4AF37' },
+              { title:'Kasih yang Nyata',   desc:'Kami percaya kasih bukan hanya kata-kata, tetapi tindakan nyata yang menyentuh jiwa dan menjangkau yang terluka.', icon:<Heart className="w-6 h-6" />, color:'#f87171' },
+              { title:'Pelayanan Bersama',  desc:'Setiap jemaat adalah pelayan. Bersama kami membangun gereja yang hidup, aktif, dan memberkati komunitas.', icon:<Users className="w-6 h-6" />, color:'#60a5fa' },
+            ].map(({ title, desc, icon, color }, i) => (
+              <div key={i} className="group relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 glass-card overflow-hidden">
+                <div className="absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{background:`linear-gradient(90deg, transparent, ${color}, transparent)`}} />
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                  style={{background:`rgba(${hexToRgb(color)}, 0.12)`, border:`1px solid rgba(${hexToRgb(color)}, 0.25)`, color}}>
+                  {icon}
+                </div>
+                <h3 className="text-lg font-extrabold mb-3" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif"}}>{title}</h3>
+                <p className="text-sm leading-relaxed" style={{color:'rgba(255,248,231,0.45)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ BPJ ══════════════════════════════════════════════════════ */}
+      <GoldDivider />
+      <section id="bpj" className="py-28" style={{background:'#080613'}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+            <div>
+              <div className="inline-flex items-center gap-2 mb-4">
+                <span className="w-8 h-px" style={{background:'#C9A84C'}} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Kepengurusan</span>
+              </div>
+              <h2 className="font-black leading-tight" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2.5rem,6vw,4rem)', color:'#FFF8E7'}}>
+                BPJ <em className="not-italic" style={{color:'#D4AF37'}}>Periode</em>
+              </h2>
+            </div>
+            <p className="text-sm max-w-xs leading-relaxed" style={{color:'rgba(255,248,231,0.25)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Badan Pengurus Jemaat yang melayani dengan sepenuh hati dan dedikasi.</p>
+          </div>
+
           {profilLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <div className="flex flex-wrap justify-center gap-5">
               {[...Array(5)].map((_,i) => (
-                <div key={i} className="flex flex-col items-center gap-3">
-                  <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
-                  <div className="w-20 h-3 bg-gray-200 rounded animate-pulse" />
-                  <div className="w-16 h-2.5 bg-gray-100 rounded animate-pulse" />
+                <div key={i} className="rounded-3xl p-6 flex flex-col items-center gap-3 animate-pulse w-36"
+                  style={{background:'rgba(201,168,76,0.04)', border:'1px solid rgba(201,168,76,0.08)'}}>
+                  <div className="w-20 h-20 rounded-full" style={{background:'rgba(201,168,76,0.08)'}} />
+                  <div className="w-24 h-3 rounded" style={{background:'rgba(201,168,76,0.08)'}} />
                 </div>
               ))}
             </div>
           ) : bpj.length === 0 ? (
-            <p className="text-center text-gray-400 py-10 text-sm">Belum ada data BPJ.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {bpj.map(b => (
-                <div key={b.id} className="flex flex-col items-center text-center group">
-                  <div className="mb-3 transition-transform duration-300 group-hover:-translate-y-1">
-                    <Avatar fotoUrl={b.foto_url} nama={b.nama} size={96} />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm leading-snug">{b.nama}</p>
-                  {b.jabatan && <p className="text-xs text-blue-600 font-semibold mt-0.5">{b.jabatan}</p>}
-                  {b.periode && <p className="text-xs text-gray-400 mt-0.5">{b.periode}</p>}
+            <p className="text-center py-16 text-sm" style={{color:'rgba(255,248,231,0.2)'}}>Belum ada data BPJ.</p>
+          ) : (() => {
+            const roots = buildTree(bpj);
+            const hasTree = bpj.some(b => b.parent_id);
+            if (!hasTree) {
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                  {bpj.map(b => <BpjCard key={b.id} b={b} />)}
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            }
+            return (
+              <div className="space-y-10">
+                <div className="flex flex-wrap justify-center gap-5">
+                  {roots.map(root => <BpjCard key={root.id} b={root} large />)}
+                </div>
+                {roots.map(root => {
+                  const kids = childrenOf(bpj, root.id);
+                  if (!kids.length) return null;
+                  return (
+                    <div key={root.id} className="relative">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-5" style={{background:'rgba(201,168,76,0.3)'}} />
+                      <p className="text-center text-[10px] font-bold uppercase tracking-widest mb-5 pt-6" style={{color:'rgba(201,168,76,0.4)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Di bawah {root.nama.split(' ')[0]}</p>
+                      <div className="flex flex-wrap justify-center gap-5">
+                        {kids.map(k => <BpjCard key={k.id} b={k} />)}
+                      </div>
+                      {kids.some(k => childrenOf(bpj, k.id).length > 0) && (
+                        <div className="mt-6 flex flex-wrap justify-center gap-4">
+                          {kids.flatMap(k => childrenOf(bpj, k.id)).map(gk => <BpjCard key={gk.id} b={gk} small />)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          GEMBALA JEMAAT  #gembala
-      ══════════════════════════════════════════════ */}
-      <section id="gembala" className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Pemimpin" title="Gembala Jemaat" sub="Para gembala yang telah dan sedang melayani jemaat GKII Longloreh." />
+      {/* ══ GEMBALA ══════════════════════════════════════════════════ */}
+      <GoldDivider />
+      <section id="gembala" className="relative py-28 overflow-hidden" style={{background:'linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)'}}>
+        {/* Atmospheric orbs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
+            style={{background:'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)'}} />
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full"
+            style={{background:'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)'}} />
+          <div className="absolute top-1/3 right-0 w-72 h-72 rounded-full"
+            style={{background:'radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 70%)'}} />
+          <div className="absolute top-0 left-0 right-0 h-px" style={{background:'linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent)'}} />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-3 mb-5">
+              <div className="h-px w-12" style={{background:'linear-gradient(90deg, transparent, rgba(245,158,11,0.6))'}} />
+              <span className="text-[10px] font-bold uppercase tracking-[0.35em]" style={{color:'rgba(245,158,11,0.7)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Pemimpin Rohani</span>
+              <div className="h-px w-12" style={{background:'linear-gradient(90deg, rgba(245,158,11,0.6), transparent)'}} />
+            </div>
+            <h2 className="font-black leading-none mb-4" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2.5rem,6vw,4rem)', color:'#FFF8E7'}}>
+              Gembala <span style={{color:'#f59e0b', fontStyle:'italic'}}>Jemaat</span>
+            </h2>
+            <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{color:'rgba(148,163,184,0.7)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+              Para gembala yang dipercaya memimpin dan menggembalakan jemaat GKII Long Loreh.
+            </p>
+          </div>
+
           {profilLoading ? (
-            <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-              {[...Array(2)].map((_,i) => (
-                <div key={i} className="flex items-center gap-6 bg-gray-50 rounded-2xl p-6 animate-pulse">
-                  <div className="w-20 h-20 rounded-full bg-gray-200 shrink-0" />
-                  <div className="space-y-2 flex-1">
-                    <div className="h-4 bg-gray-200 rounded w-3/4" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+            <div className="space-y-16">
+              <div className="flex gap-8 justify-center">
+                {[...Array(2)].map((_,i) => (
+                  <div key={i} className="rounded-3xl p-10 flex flex-col items-center gap-4 animate-pulse w-64"
+                    style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)'}}>
+                    <div className="w-36 h-36 rounded-full" style={{background:'rgba(255,255,255,0.1)'}} />
+                    <div className="w-36 h-4 rounded" style={{background:'rgba(255,255,255,0.1)'}} />
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : gembala.length === 0 ? (
-            <p className="text-center text-gray-400 py-10 text-sm">Belum ada data gembala.</p>
-          ) : (
-            <div className="max-w-2xl mx-auto flex flex-col gap-5">
-              {gembala.map((g, i) => {
-                const isCurrent = !g.tahun_selesai;
-                return (
-                  <div key={g.id} className={`flex items-center gap-6 rounded-2xl p-5 border transition-all duration-300 hover:shadow-md ${
-                    isCurrent ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100' : 'bg-white border-gray-100'}`}>
-                    <div className="shrink-0">
-                      <Avatar fotoUrl={g.foto_url} nama={g.nama} size={80} />
+            <p className="text-center py-16 text-sm" style={{color:'rgba(148,163,184,0.4)'}}>Belum ada data gembala.</p>
+          ) : (() => {
+            const aktif   = gembala.filter(g => g.tipe === 'aktif');
+            const senior  = gembala.filter(g => g.tipe === 'senior');
+            const mantan  = gembala.filter(g => g.tipe === 'mantan');
+            const VISIBLE = 5;
+            const maxIdx  = Math.max(0, senior.length - VISIBLE);
+            const visibleSenior = senior.slice(seniorIdx, seniorIdx + VISIBLE);
+            return (
+              <div>
+                {aktif.length > 0 && (
+                  <div className="mb-20">
+                    <div className="flex items-center gap-4 justify-center mb-10">
+                      <div className="h-px flex-1 max-w-24" style={{background:'linear-gradient(90deg, transparent, rgba(245,158,11,0.3))'}} />
+                      <div className="flex items-center gap-2 px-4 py-1.5 rounded-full" style={{border:'1px solid rgba(245,158,11,0.2)', background:'rgba(245,158,11,0.06)'}}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{color:'rgba(245,158,11,0.9)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Gembala Aktif</span>
+                      </div>
+                      <div className="h-px flex-1 max-w-24" style={{background:'linear-gradient(90deg, rgba(245,158,11,0.3), transparent)'}} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <p className="font-extrabold text-gray-900 text-base">{g.nama}</p>
-                        {isCurrent && (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Aktif
-                          </span>
+                    <div className="flex flex-wrap justify-center gap-8">
+                      {aktif.map(g => (
+                        <div key={g.id} className="group relative flex-shrink-0 w-48"
+                          style={{filter:'drop-shadow(0 25px 50px rgba(245,158,11,0.12))'}}>
+                          <div className="absolute inset-0 rounded-3xl transition-opacity duration-500 group-hover:opacity-100 opacity-0 pointer-events-none"
+                            style={{background:'radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.15), transparent 70%)'}} />
+                          <div className="relative rounded-3xl overflow-hidden transition-transform duration-500 group-hover:-translate-y-2"
+                            style={{background:'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)', border:'1px solid rgba(255,255,255,0.1)', backdropFilter:'blur(12px)'}}>
+                            <div className="absolute top-0 left-6 right-6 h-px rounded-full" style={{background:'linear-gradient(90deg, transparent, rgba(245,158,11,0.5), transparent)'}} />
+                            <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none" style={{background:'radial-gradient(ellipse at 50% -20%, rgba(245,158,11,0.1), transparent 70%)'}} />
+                            <div className="relative p-6 flex flex-col items-center text-center">
+                              <div className="relative mb-7">
+                                <div className="absolute inset-0 rounded-full scale-110 blur-md" style={{background:'radial-gradient(circle, rgba(245,158,11,0.35), transparent 70%)'}} />
+                                <div className="relative rounded-full" style={{background:'linear-gradient(135deg, #f59e0b, #92400e, #f59e0b)', padding:'3px'}}>
+                                  <div className="rounded-full overflow-hidden" style={{background:'#0f172a'}}>
+                                    <Avatar fotoUrl={g.foto_url} nama={g.nama} size={96} gold />
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="font-bold text-xl leading-snug mb-3" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif"}}>{g.nama}</p>
+                              <div className="flex items-center gap-2 mb-4">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider" style={{fontFamily:"'Inter','Segoe UI',sans-serif"}}>Aktif Melayani</span>
+                              </div>
+                              <div className="w-full h-px mb-4" style={{background:'rgba(255,255,255,0.06)'}} />
+                              <p className="text-xs tracking-wide" style={{color:'rgba(148,163,184,0.5)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{g.tahun_mulai} — Sekarang</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {senior.length > 0 && (
+                  <div className="mb-16">
+                    <div className="flex items-center gap-4 justify-center mb-10">
+                      <div className="h-px flex-1 max-w-24" style={{background:'linear-gradient(90deg, transparent, rgba(148,163,184,0.2))'}} />
+                      <div className="flex items-center gap-2 px-4 py-1.5 rounded-full" style={{border:'1px solid rgba(148,163,184,0.15)', background:'rgba(148,163,184,0.05)'}}>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{color:'rgba(148,163,184,0.8)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Senior Pastor</span>
+                      </div>
+                      <div className="h-px flex-1 max-w-24" style={{background:'linear-gradient(90deg, rgba(148,163,184,0.2), transparent)'}} />
+                    </div>
+                    <div className="flex items-center gap-4 justify-center">
+                      <button disabled={seniorIdx === 0} onClick={() => setSeniorIdx(i => Math.max(0, i - 1))}
+                        className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
+                        style={{border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.5)'}}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <div className="flex gap-5 overflow-hidden">
+                        {visibleSenior.map(g => (
+                          <div key={g.id} className="group flex flex-col items-center text-center flex-shrink-0 w-28 hover:-translate-y-1 transition-transform duration-200">
+                            <div className="relative mb-4">
+                              <div className="rounded-full overflow-hidden" style={{padding:'2px', background:'linear-gradient(135deg, rgba(148,163,184,0.4), rgba(100,116,139,0.15), rgba(148,163,184,0.4))'}}>
+                                <div className="rounded-full overflow-hidden" style={{background:'#1e293b'}}>
+                                  <Avatar fotoUrl={g.foto_url} nama={g.nama} size={76} />
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs font-semibold leading-snug mb-1" style={{color:'rgba(203,213,225,0.8)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{g.nama}</p>
+                            <p className="text-[10px]" style={{color:'rgba(148,163,184,0.45)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{g.tahun_mulai}{g.tahun_selesai ? `–${g.tahun_selesai}` : ''}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <button disabled={seniorIdx >= maxIdx} onClick={() => setSeniorIdx(i => Math.min(maxIdx, i + 1))}
+                        className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
+                        style={{border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.5)'}}>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {senior.length > VISIBLE && (
+                      <div className="flex justify-center gap-1.5 mt-6">
+                        {Array.from({ length: maxIdx + 1 }).map((_, i) => (
+                          <button key={i} onClick={() => setSeniorIdx(i)}
+                            className="h-1.5 rounded-full transition-all duration-300"
+                            style={{width: i === seniorIdx ? '24px' : '6px', background: i === seniorIdx ? '#f59e0b' : 'rgba(255,255,255,0.15)'}} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {mantan.length > 0 && (
+                  <div className="pt-10" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+                    <p className="text-center text-[10px] font-bold uppercase tracking-[0.3em] mb-8" style={{color:'rgba(100,116,139,0.6)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                      Gembala Terdahulu
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-6">
+                      {mantan.map(g => (
+                        <div key={g.id} className="flex flex-col items-center text-center w-28 opacity-60 hover:opacity-90 transition-opacity duration-200">
+                          <div className="mb-3 rounded-full overflow-hidden grayscale" style={{border:'1px solid rgba(255,255,255,0.1)'}}>
+                            <Avatar fotoUrl={g.foto_url} nama={g.nama} size={72} />
+                          </div>
+                          <p className="text-xs font-semibold leading-snug" style={{color:'rgba(203,213,225,0.7)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{g.nama}</p>
+                          <p className="text-[10px] mt-0.5" style={{color:'rgba(148,163,184,0.4)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{g.tahun_mulai}–{g.tahun_selesai}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      </section>
+
+      {/* ══ KEGIATAN GEREJA ══════════════════════════════════════════ */}
+      <GoldDivider />
+      <section id="jadwal" className="py-28" style={{background:'linear-gradient(180deg, #0B1026 0%, #080613 100%)'}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 mb-4">
+                <span className="w-8 h-px" style={{background:'#C9A84C'}} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Gereja</span>
+              </div>
+              <h2 className="font-black leading-tight" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2.5rem,6vw,4rem)', color:'#FFF8E7'}}>
+                Kegiatan <em className="not-italic" style={{color:'#D4AF37'}}>Gereja</em>
+              </h2>
+            </div>
+            <p className="text-sm max-w-xs leading-relaxed" style={{color:'rgba(255,248,231,0.25)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Jadwal, informasi, program, dan galeri kegiatan jemaat GKII Long Loreh.</p>
+          </div>
+
+          {/* Tab bar */}
+          <div className="flex gap-1 rounded-2xl p-1.5 mb-10 w-full max-w-lg" style={{background:'rgba(201,168,76,0.06)', border:'1px solid rgba(201,168,76,0.12)'}}>
+            {([
+              { key:'jadwal',  label:'Jadwal Ibadah' },
+              { key:'info',    label:'Info' },
+              { key:'program', label:'Program' },
+              { key:'galeri',  label:'Galeri' },
+            ] as const).map(({ key, label }) => (
+              <button key={key} onClick={() => setKegiatanTab(key)}
+                className="flex-1 rounded-xl py-2.5 text-xs font-bold transition-all duration-200"
+                style={{
+                  fontFamily:"'Inter','Segoe UI',sans-serif",
+                  background: kegiatanTab === key ? 'linear-gradient(135deg, #C9A84C, #D4AF37)' : 'transparent',
+                  color: kegiatanTab === key ? '#080613' : 'rgba(255,248,231,0.35)',
+                  boxShadow: kegiatanTab === key ? '0 4px 16px rgba(201,168,76,0.3)' : 'none',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Tab: Jadwal Ibadah ──────────────────────────────────── */}
+          {kegiatanTab === 'jadwal' && (
+            loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(3)].map((_,i) => <div key={i} className="rounded-2xl h-40 animate-pulse" style={{background:'rgba(201,168,76,0.05)'}} />)}
+              </div>
+            ) : sortedJadwal.length === 0 ? (
+              <div className="text-center py-16 flex flex-col items-center gap-3" style={{color:'rgba(255,248,231,0.2)'}}>
+                <Calendar className="w-8 h-8" />
+                <p className="text-sm" style={{fontFamily:"'Inter','Segoe UI',sans-serif"}}>Belum ada jadwal ibadah.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedJadwal.map(j => (
+                  <div key={j.id} className="group rounded-2xl p-6 transition-all duration-300 overflow-hidden relative glass-card hover:-translate-y-1">
+                    <div className="absolute top-0 left-0 right-0 h-px" style={{background:'linear-gradient(90deg, transparent, rgba(201,168,76,0.15), transparent)'}} />
+                    <div className="flex items-center justify-between mb-5">
+                      <span className={`inline-block border rounded-full px-3 py-1 text-xs font-bold ${HARI_ACCENT[j.hari] ?? 'border-white/10 bg-white/5 text-white/50'}`}
+                        style={{fontFamily:"'Inter','Segoe UI',sans-serif"}}>{j.hari}</span>
+                      <span className={`text-2xl font-black ${HARI_COLOR[j.hari] ?? ''}`}
+                        style={{fontFamily:"Georgia,'Times New Roman',serif"}}>{j.jam}</span>
+                    </div>
+                    <h3 className="font-bold text-base leading-snug mb-3" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif"}}>{j.nama}</h3>
+                    {j.lokasi && (
+                      <div className="flex items-center gap-2 text-xs" style={{color:'rgba(255,248,231,0.3)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                        <MapPin className="w-4 h-4 shrink-0" /><span>{j.lokasi}</span>
+                      </div>
+                    )}
+                    {j.keterangan && <p className="text-xs mt-1.5 italic" style={{color:'rgba(255,248,231,0.2)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{j.keterangan}</p>}
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {/* ── Tab: Info (Pengumuman) ──────────────────────────────── */}
+          {kegiatanTab === 'info' && (
+            loading ? (
+              <div className="space-y-4 max-w-3xl">
+                {[...Array(2)].map((_,i) => <div key={i} className="rounded-2xl h-28 animate-pulse" style={{background:'rgba(201,168,76,0.05)'}} />)}
+              </div>
+            ) : pengumuman.length === 0 ? (
+              <div className="text-center py-16 flex flex-col items-center gap-3" style={{color:'rgba(255,248,231,0.2)'}}>
+                <Megaphone className="w-8 h-8" />
+                <p className="text-sm" style={{fontFamily:"'Inter','Segoe UI',sans-serif"}}>Belum ada pengumuman.</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-w-3xl">
+                {pengumuman.map((p, idx) => (
+                  <div key={p.id}
+                    className="group relative rounded-2xl p-7 transition-all duration-300 overflow-hidden glass-card hover:border-[rgba(201,168,76,0.25)]">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{background:'linear-gradient(180deg, #C9A84C, #D4AF37)'}} />
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                      <span className="text-xs font-bold px-3 py-1 rounded-full" style={{color:'#D4AF37', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.2)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{formatTgl(p.tanggal_mulai)}</span>
+                      {p.tanggal_selesai && <span className="text-xs" style={{color:'rgba(255,248,231,0.25)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>s.d. {formatTgl(p.tanggal_selesai)}</span>}
+                      <span className="ml-auto text-xs font-black select-none" style={{color:'rgba(255,248,231,0.1)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>#{idx+1}</span>
+                    </div>
+                    <h3 className="font-bold text-base leading-snug mb-2" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif"}}>{p.judul}</h3>
+                    <p className="text-sm leading-relaxed whitespace-pre-line" style={{color:'rgba(255,248,231,0.45)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{p.isi}</p>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {/* ── Tab: Program ───────────────────────────────────────── */}
+          {kegiatanTab === 'program' && (
+            loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(3)].map((_,i) => <div key={i} className="rounded-2xl h-36 animate-pulse" style={{background:'rgba(201,168,76,0.05)'}} />)}
+              </div>
+            ) : program.length === 0 ? (
+              <div className="text-center py-16 flex flex-col items-center gap-3" style={{color:'rgba(255,248,231,0.2)'}}>
+                <CalendarDays className="w-10 h-10" />
+                <p className="text-sm" style={{fontFamily:"'Inter','Segoe UI',sans-serif"}}>Belum ada program kegiatan.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {program.map(pg => {
+                  const sudahSelesai = pg.tanggal_selesai && new Date(pg.tanggal_selesai) < new Date();
+                  return (
+                    <div key={pg.id} className={`group relative rounded-2xl p-6 transition-all duration-300 overflow-hidden ${sudahSelesai ? '' : 'glass-card hover:-translate-y-1'}`}
+                      style={sudahSelesai ? {background:'rgba(201,168,76,0.02)', border:'1px solid rgba(201,168,76,0.06)', opacity:0.6, borderRadius:'1rem'} : {}}>
+                      <div className="absolute top-0 left-0 right-0 h-px" style={{background:'linear-gradient(90deg, transparent, rgba(201,168,76,0.2), transparent)'}} />
+                      {pg.kategori && (
+                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-3" style={{color:'rgba(201,168,76,0.8)', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.15)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                          {pg.kategori}
+                        </span>
+                      )}
+                      <h3 className="font-bold text-base leading-snug mb-3" style={{color:'#FFF8E7', fontFamily:"Georgia,'Times New Roman',serif"}}>{pg.judul}</h3>
+                      {pg.deskripsi && <p className="text-sm leading-relaxed mb-4 line-clamp-2" style={{color:'rgba(255,248,231,0.35)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>{pg.deskripsi}</p>}
+                      <div className="flex flex-col gap-1.5 mt-auto">
+                        <div className="flex items-center gap-2 text-xs" style={{color:'rgba(255,248,231,0.35)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                          <Clock className="w-3.5 h-3.5 shrink-0" />
+                          <span>{formatTgl(pg.tanggal_mulai)}{pg.tanggal_selesai ? ` — ${formatTgl(pg.tanggal_selesai)}` : ''}</span>
+                        </div>
+                        {pg.lokasi && (
+                          <div className="flex items-center gap-2 text-xs" style={{color:'rgba(255,248,231,0.35)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                            <MapPin className="w-3.5 h-3.5 shrink-0" /><span>{pg.lokasi}</span>
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5" /></svg>
-                        Masa pelayanan: <strong className="text-gray-700">{g.tahun_mulai} – {g.tahun_selesai ?? 'Sekarang'}</strong>
-                      </p>
                     </div>
-                    <div className="shrink-0 text-right hidden sm:block">
-                      <p className="text-3xl font-extrabold text-gray-100 select-none">#{gembala.length - i}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {/* ── Tab: Galeri ────────────────────────────────────────── */}
+          {kegiatanTab === 'galeri' && (
+            galeri.length > 0 ? (
+              <DomeGallery
+                images={galeri.map(g => ({ src: g.foto_url, alt: g.judul ?? '' }))}
+                overlayBlurColor="#080613"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24" style={{color:'rgba(255,248,231,0.1)'}}>
+                <ImageIcon className="w-16 h-16 mb-4" />
+                <p className="text-sm" style={{fontFamily:"'Inter','Segoe UI',sans-serif"}}>Belum ada foto di galeri</p>
+              </div>
+            )
           )}
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          JADWAL IBADAH  #jadwal
-      ══════════════════════════════════════════════ */}
-      <section id="jadwal" className="py-24 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Ibadah" title="Jadwal Ibadah" sub="Bergabunglah bersama kami dalam beribadah kepada Tuhan" />
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {[...Array(4)].map((_,i) => <div key={i} className="bg-white rounded-2xl h-36 animate-pulse border border-gray-100" />)}
-            </div>
-          ) : sortedJadwal.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 flex flex-col items-center gap-2">
-              <IcoCalendar /><p className="text-sm">Belum ada jadwal ibadah.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {sortedJadwal.map(j => (
-                <div key={j.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex">
-                  <div className={`w-1 shrink-0 ${HARI_LEFT[j.hari] ?? 'bg-gray-400'}`} />
-                  <div className="p-5 flex-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`inline-block rounded-full border px-3 py-0.5 text-xs font-bold ${HARI_ACCENT[j.hari] ?? 'border-gray-300 bg-gray-50 text-gray-600'}`}>{j.hari}</span>
-                      <div className="flex items-center gap-1 text-gray-500"><IcoClock /><span className="text-sm font-extrabold text-gray-800">{j.jam}</span></div>
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-[15px] leading-snug mb-2">{j.nama}</h3>
-                    {j.lokasi && <div className="flex items-center gap-1.5 text-xs text-gray-400"><IcoLocation /><span>{j.lokasi}</span></div>}
-                    {j.keterangan && <p className="text-xs text-gray-400 mt-1 italic">{j.keterangan}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* ══ CTA ══════════════════════════════════════════════════════ */}
+      <GoldDivider />
+      <section className="relative overflow-hidden py-32" style={{background:'#080613'}}>
+        <div className="absolute inset-0">
+          <img src="/aset-landingpage/gkii.webp" alt="" className="w-full h-full object-cover object-top opacity-20" />
+          <div className="absolute inset-0" style={{background:'linear-gradient(135deg, rgba(8,6,19,0.95) 0%, rgba(11,16,38,0.9) 50%, rgba(8,6,19,0.95) 100%)'}} />
+          {/* Gold spotlight center */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
+            style={{background:'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 65%)'}} />
         </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          PENGUMUMAN  #pengumuman
-      ══════════════════════════════════════════════ */}
-      <section id="pengumuman" className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <SectionLabel tag="Info Terkini" title="Pengumuman" sub="Informasi dan kegiatan terkini jemaat" />
-          {loading ? (
-            <div className="max-w-3xl mx-auto flex flex-col gap-5">
-              {[...Array(2)].map((_,i) => <div key={i} className="bg-gray-50 rounded-2xl h-28 animate-pulse" />)}
-            </div>
-          ) : pengumuman.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 flex flex-col items-center gap-2">
-              <IcoMegaphone /><p className="text-sm">Belum ada pengumuman.</p>
-            </div>
-          ) : (
-            <div className="max-w-3xl mx-auto flex flex-col gap-5">
-              {pengumuman.map((p, idx) => (
-                <div key={p.id} className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all duration-300 p-6 pl-7 overflow-hidden">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-l-2xl" />
-                  <div className="absolute top-5 right-5 w-7 h-7 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center">
-                    <span className="text-xs font-bold text-gray-400 group-hover:text-blue-600">{idx+1}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">{formatTgl(p.tanggal_mulai)}</span>
-                    {p.tanggal_selesai && <span className="text-xs text-gray-400">s.d. {formatTgl(p.tanggal_selesai)}</span>}
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-base leading-snug mb-2 pr-8">{p.judul}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{p.isi}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          GALERI  #galeri
-      ══════════════════════════════════════════════ */}
-      <section id="galeri" className="py-24 bg-[#060010]">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-400 bg-blue-950/60 px-4 py-1.5 rounded-full">Momen Bersama</span>
-            <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-white">Galeri Foto</h2>
-            <p className="mt-3 text-gray-400 text-sm max-w-xl mx-auto">Kenangan indah perjalanan iman bersama jemaat GKII Longloreh.</p>
+        <div className="absolute top-0 left-0 right-0 h-px" style={{background:'linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent)'}} />
+        <div className="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
+          <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full" style={{border:'1px solid rgba(201,168,76,0.2)', background:'rgba(201,168,76,0.07)', backdropFilter:'blur(12px)'}}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#C9A84C'}} />
+            <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{color:'rgba(201,168,76,0.8)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Bergabunglah Bersama Kami</span>
           </div>
-          {galeri.length > 0 ? (
-            <DomeGallery
-              images={galeri.map(g => ({ src: g.foto_url, alt: g.judul ?? '' }))}
-              overlayBlurColor="#060010"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-600">
-              <svg className="w-16 h-16 mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-              </svg>
-              <p className="text-sm opacity-40">Belum ada foto di galeri</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          CTA BAND
-      ══════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage:`url('/aset-landingpage/gkii.webp')` }} />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-indigo-900/85" />
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-20 text-center">
-          <p className="text-blue-300 text-xs font-bold uppercase tracking-widest mb-3">Bergabunglah</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Kami Menantikan Kehadiranmu</h2>
-          <p className="text-white/75 text-lg mb-8 max-w-lg mx-auto leading-relaxed">
+          <h2 className="font-black leading-tight mb-8 drop-shadow-2xl" style={{fontFamily:"Georgia,'Times New Roman',serif", fontSize:'clamp(2.5rem,7vw,5rem)', color:'#FFF8E7'}}>
+            Kami Menantikan<br /><em className="not-italic shimmer-text">Kehadiranmu</em>
+          </h2>
+          <p className="text-lg mb-12 max-w-lg mx-auto leading-relaxed" style={{color:'rgba(255,248,231,0.45)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
             Temukan keluarga rohani di GKII Longloreh. Setiap jiwa berharga bagi Tuhan dan bagi kami.
           </p>
-          <a href="#jadwal" className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-700 hover:bg-blue-50 active:scale-95 px-8 py-3.5 text-sm font-bold transition-all shadow-2xl">
-            <IcoCalendar /> Lihat Jadwal Ibadah
-          </a>
+          <div className="flex flex-wrap items-center justify-center gap-5">
+            <a href="#jadwal"
+              className="inline-flex items-center gap-3 font-bold px-9 py-4 rounded-full text-sm gold-btn"
+              style={{color:'#080613', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+              <Calendar className="w-4 h-4" /> Lihat Jadwal Ibadah
+            </a>
+            <Link to="/login"
+              className="inline-flex items-center gap-3 font-semibold px-9 py-4 rounded-full text-sm transition-all active:scale-95"
+              style={{background:'rgba(255,248,231,0.07)', border:'1px solid rgba(255,248,231,0.15)', backdropFilter:'blur(8px)', color:'rgba(255,248,231,0.8)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+              <LogIn className="w-4 h-4" /> Masuk ke Sistem
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════
-          FOOTER
-      ══════════════════════════════════════════════ */}
-      <footer className="bg-gray-950 text-gray-400">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+      {/* ══ FOOTER ════════════════════════════════════════════════════ */}
+      <footer style={{background:'#04030d', borderTop:'1px solid rgba(201,168,76,0.1)'}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            {/* Brand */}
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <img src="/images/logo/logo-icon.svg" alt="Logo" className="w-9 h-9 opacity-80" />
+              <div className="flex items-center gap-3 mb-5">
+                <img src="/images/logo/logo-icon.svg" alt="Logo" className="w-9 h-9 opacity-60" />
                 <div>
-                  <p className="text-white font-extrabold text-sm">GKII Longloreh</p>
-                  <p className="text-xs text-gray-500">Gereja Kemah Injil Indonesia</p>
+                  <p className="font-bold text-sm tracking-wide" style={{color:'#FFF8E7'}}>GKII Longloreh</p>
+                  <p className="text-[10px] uppercase tracking-widest" style={{color:'rgba(201,168,76,0.5)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Gereja Kemah Injil Indonesia</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 leading-relaxed">Bersama bertumbuh dalam iman, melayani dengan kasih, dan bersaksi bagi kemuliaan Tuhan.</p>
+              <p className="text-sm leading-relaxed" style={{color:'rgba(255,248,231,0.2)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                Bersama bertumbuh dalam iman, melayani dengan kasih, dan bersaksi bagi kemuliaan Tuhan.
+              </p>
             </div>
+            {/* Navigasi */}
             <div>
-              <p className="text-white font-bold text-sm mb-4">Navigasi</p>
-              <ul className="flex flex-col gap-2.5">
-                {[['#sejarah','Sejarah Gereja'],['#visi-misi','Visi & Misi'],['#bpj','BPJ Periode'],['#gembala','Gembala Jemaat'],['#jadwal','Jadwal Ibadah'],['#pengumuman','Pengumuman'],['#galeri','Galeri']].map(([href,label]) => (
+              <p className="font-bold text-xs uppercase tracking-widest mb-5" style={{color:'rgba(255,248,231,0.4)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Navigasi</p>
+              <ul className="grid grid-cols-2 gap-2">
+                {[['#sejarah','Sejarah'],['#visi-misi','Visi & Misi'],['#bpj','BPJ Periode'],['#gembala','Gembala'],['#jadwal','Jadwal Ibadah'],['#pengumuman','Pengumuman'],['#galeri','Galeri']].map(([href,label])=>(
                   <li key={href}>
-                    <a href={href} className="text-sm text-gray-500 hover:text-blue-400 transition-colors flex items-center gap-2">
-                      <span className="w-1 h-1 rounded-full bg-blue-600" />{label}
+                    <a href={href} className="text-sm transition-colors flex items-center gap-2"
+                      style={{color:'rgba(255,248,231,0.25)', fontFamily:"'Inter','Segoe UI',sans-serif"}}
+                      onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='#D4AF37'}
+                      onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='rgba(255,248,231,0.25)'}>
+                      <span className="w-1 h-1 rounded-full" style={{background:'rgba(201,168,76,0.4)'}} />{label}
                     </a>
                   </li>
                 ))}
               </ul>
             </div>
+            {/* Sistem */}
             <div>
-              <p className="text-white font-bold text-sm mb-4">Sistem Informasi</p>
-              <p className="text-sm text-gray-500 mb-4 leading-relaxed">Kelola data jemaat, keuangan, dan konten gereja melalui sistem informasi kami.</p>
-              <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-sm font-bold text-white transition-colors shadow-lg shadow-blue-900/40">
-                <IcoLogin /> Masuk ke Sistem
+              <p className="font-bold text-xs uppercase tracking-widest mb-5" style={{color:'rgba(255,248,231,0.4)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>Sistem Informasi</p>
+              <p className="text-sm leading-relaxed mb-5" style={{color:'rgba(255,248,231,0.2)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                Kelola data jemaat, keuangan, dan konten gereja melalui sistem informasi kami.
+              </p>
+              <Link to="/login"
+                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
+                style={{background:'rgba(201,168,76,0.08)', border:'1px solid rgba(201,168,76,0.2)', color:'#C9A84C', fontFamily:"'Inter','Segoe UI',sans-serif"}}>
+                <LogIn className="w-4 h-4" /> Masuk ke Sistem
               </Link>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
-            <p>&copy; {new Date().getFullYear()} GKII Longloreh. Semua hak dilindungi.</p>
-            <p>Dibangun dengan ❤️ untuk jemaat</p>
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-3" style={{borderTop:'1px solid rgba(201,168,76,0.06)'}}>
+            <p className="text-xs" style={{color:'rgba(255,248,231,0.15)', fontFamily:"'Inter','Segoe UI',sans-serif"}}>© {new Date().getFullYear()} GKII Jemaat Long Loreh. Sistem Informasi Jemaat.</p>
+            <p className="text-xs" style={{color:'rgba(201,168,76,0.25)', fontFamily:"Georgia,'Times New Roman',serif", fontStyle:'italic'}}>Soli Deo Gloria</p>
           </div>
         </div>
       </footer>
+
     </div>
   );
+}
+
+// Utility: convert hex color to "r,g,b" string for rgba()
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
 }

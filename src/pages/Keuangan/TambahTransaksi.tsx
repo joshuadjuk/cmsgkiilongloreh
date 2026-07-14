@@ -6,7 +6,7 @@ import Label from '../../components/form/Label';
 import Input from '../../components/form/input/InputField';
 import { useAuth } from '../../context/AuthContext';
 
-const KEUANGAN_URL = 'https://gereja.eternity.my.id/api-gkii/keuangan.php';
+const KEUANGAN_URL = 'https://gkiilongloreh.com/api-gkii/keuangan.php';
 
 const KATEGORI_PEMASUKAN = [
   'Persembahan Umum',

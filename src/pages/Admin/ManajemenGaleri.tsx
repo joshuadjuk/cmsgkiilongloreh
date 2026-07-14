@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-const GALERI_URL = 'https://gereja.eternity.my.id/api-gkii/galeri.php';
+const GALERI_URL = 'https://gkiilongloreh.com/api-gkii/galeri.php';
 
 interface GaleriItem {
   id: number;
